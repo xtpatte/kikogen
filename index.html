@@ -742,6 +742,11 @@
                     saveSettings();
                 });
             });
+
+            // Update preview on window resize (e.g., phone rotation)
+            window.addEventListener('resize', () => {
+                updatePreview();
+            });
         }
 
         function calculateMOD(o2) {
@@ -780,14 +785,26 @@
             const heightMm = num('labelHeight');
             const basePx = num('basePxSize');
 
-            // 1mm ~ 3.78px. We scale up for display sharpness, but consistency matters.
-            // Using a multiplier to make it viewable on screen relative to MM size.
-            const screenScale = 7.5; // Increased by 50% for better visibility
-            const contentScale = 1.5; // Scale all internal content by 50%
+            // Responsive scaling: adapt to container width with a max of 150%
+            const baseScreenScale = 5; // Base scale (original size)
+            const maxScale = 1.5; // Maximum 150% of base size
 
-            DOM.labelContent.style.width = `${widthMm * screenScale}px`;
-            DOM.labelContent.style.height = `${heightMm * screenScale}px`;
-            DOM.labelContent.style.setProperty('--base-px-size', `${basePx * contentScale}px`);
+            // Get available container width (with some padding margin)
+            const containerWidth = DOM.previewContainer.clientWidth - 40; // 40px padding/margin
+
+            // Calculate target width at base scale
+            const baseWidth = widthMm * baseScreenScale;
+
+            // Calculate scale factor needed to fit container
+            const scaleFactor = Math.min(containerWidth / baseWidth, maxScale);
+
+            // Apply the calculated scale
+            const finalScreenScale = baseScreenScale * scaleFactor;
+            const finalContentScale = scaleFactor;
+
+            DOM.labelContent.style.width = `${widthMm * finalScreenScale}px`;
+            DOM.labelContent.style.height = `${heightMm * finalScreenScale}px`;
+            DOM.labelContent.style.setProperty('--base-px-size', `${basePx * finalContentScale}px`);
         }
 
         // --- Logic: Storage ---
