@@ -1026,16 +1026,22 @@
                 const parsed = parseOcrText(text);
 
                 if (parsed.found) {
-                    OCR.status.innerText = `Trovati: O₂ ${parsed.o2 || '--'}% | He ${parsed.he || '--'}%`;
+                    let statusMsg = "Trovati: ";
+                    if (parsed.o2 !== null) statusMsg += `O₂ ${parsed.o2}% `;
+                    if (parsed.he !== null) statusMsg += `He ${parsed.he}% `;
+                    if (parsed.temp !== null) statusMsg += `${parsed.temp}°C`;
+
+                    OCR.status.innerText = statusMsg;
                     OCR.status.style.color = "var(--color-success)";
 
-                    if (parsed.o2) DOM.inputs.o2Input.value = parsed.o2;
-                    if (parsed.he) DOM.inputs.heInput.value = parsed.he;
+                    if (parsed.o2 !== null) DOM.inputs.o2Input.value = parsed.o2;
+                    if (parsed.he !== null) DOM.inputs.heInput.value = parsed.he;
+                    if (parsed.temp !== null) DOM.inputs.temperatureInput.value = parsed.temp;
 
                     updatePreview();
                     saveSettings();
 
-                    setTimeout(() => closeOcrModal(), 2000);
+                    setTimeout(() => closeOcrModal(), 3000);
                 } else {
                     throw new Error("Nessun valore leggibile trovato");
                 }
@@ -1051,22 +1057,51 @@
         }
 
         function parseOcrText(text) {
-            // Regex strategies
-            const clean = text.replace(/O2/gi, 'O2').replace(/He/gi, 'He'); // Normalize
+            let result = { found: false, o2: null, he: null, temp: null };
 
-            // Strategy 1: TMX format "21/35"
-            const tmxMatch = clean.match(/(\d{2}[.,]?\d?)\s*[\/|\\]\s*(\d{1,2}[.,]?\d?)/);
-            if (tmxMatch) {
-                return { found: true, o2: parseFloat(tmxMatch[1]), he: parseFloat(tmxMatch[2]) };
+            // Helper to clean and parse float
+            const extractNum = (match) => {
+                if (!match) return null;
+                // Replace comma with dot, remove any non-numeric chars except dot/comma
+                const raw = match[1].replace(/,/g, '.');
+                const val = parseFloat(raw);
+                return isNaN(val) ? null : val;
+            };
+
+            // Strategy 1: Explicit Labels (Priority)
+            // Supports: Oxygen: 21.0, Ossigeno: 21.0, O2: 21.0, 02 21.0 (OCR error), O 2 21.0
+            const o2Match = text.match(/(?:Oxygen|Ossigeno|Oxy|O2|02|O\s?2)[\s:.]*(\d{1,3}[.,]?\d*)/i);
+            const o2Val = extractNum(o2Match);
+            if (o2Val !== null) {
+                result.o2 = o2Val;
+                result.found = true;
             }
 
-            // Strategy 2: Explicit Labels "O2 21.0"
-            const o2Match = clean.match(/O2[\s:.]*(\d{2}[.,]?\d?)/i);
-            const heMatch = clean.match(/He[\s:.]*(\d{1,2}[.,]?\d?)/i);
+            // Supports: Helium: 0.3, Elio: 0.3, He: 0.3, H e 0.3
+            const heMatch = text.match(/(?:Helium|Elio|He|H\s?e)[\s:.]*(\d{1,3}[.,]?\d*)/i);
+            const heVal = extractNum(heMatch);
+            if (heVal !== null) {
+                result.he = heVal;
+                result.found = true;
+            }
 
-            let result = { found: false, o2: null, he: null };
-            if (o2Match) { result.o2 = parseFloat(o2Match[1]); result.found = true; }
-            if (heMatch) { result.he = parseFloat(heMatch[1]); result.found = true; }
+            // Supports: Temperature: 13.8, Temp: 13.8, etc.
+            const tempMatch = text.match(/(?:Temperature|Temperatura|Temp)[\s:.]*(\d{1,3}[.,]?\d*)/i);
+            const tempVal = extractNum(tempMatch);
+            if (tempVal !== null) {
+                result.temp = tempVal;
+                result.found = true;
+            }
+
+            // Strategy 2: TMX format "21/35" (Backup if no O2/He found via labels)
+            if (result.o2 === null && result.he === null) {
+                const tmxMatch = text.match(/(\d{2}[.,]?\d?)\s*[\/|\\]\s*(\d{1,2}[.,]?\d?)/);
+                if (tmxMatch) {
+                    result.o2 = parseFloat(tmxMatch[1].replace(',', '.'));
+                    result.he = parseFloat(tmxMatch[2].replace(',', '.'));
+                    result.found = true;
+                }
+            }
 
             return result;
         }
