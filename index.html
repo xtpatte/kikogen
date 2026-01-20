@@ -667,42 +667,52 @@
     </main>
 
     <footer>
-        <p style="font-weight: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">2026 KikoGen - Version 2.7</p>
+        <p style="font-weight: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">2026 KikoGen - Version 2.8</p>
     </footer>
 
     <!-- OCR Modal -->
     <div id="ocrModal" class="modal-overlay">
         <div class="modal-box">
-            <h3 style="font-size: 1.2rem; margin-bottom: 10px;">Scansione Analizzatore</h3>
-            <p style="color: var(--color-text-muted); font-size: 0.9rem;">Inquadra il display con i valori O₂ e He</p>
+            <h3 style="font-size: 1.2rem; margin-bottom: 10px;">📷 Scansione Continua</h3>
+            <p style="color: var(--color-text-muted); font-size: 0.9rem;">Punta la camera sul display - i valori
+                appariranno automaticamente!</p>
 
-            <div class="camera-viewport">
+            <div class="camera-viewport" style="position: relative;">
                 <video id="videoElement" autoplay playsinline></video>
                 <canvas id="captureCanvas" style="display:none;"></canvas>
+                <!-- Live detection overlay -->
+                <div id="liveDetection"
+                    style="position: absolute; bottom: 10px; left: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #10b981; padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; text-align: center; display: none;">
+                    <span id="liveO2">O₂: --</span> | <span id="liveHe">He: --</span>
+                </div>
             </div>
 
             <div id="ocrLoading" class="spinner"></div>
             <p id="ocrStatus"
                 style="min-height: 24px; color: var(--color-primary); font-weight: 500; font-size: 0.9rem; margin-bottom: 15px;">
+                🔄 Scansione in corso... tieni fermo il telefono
             </p>
+
+            <!-- Detected Values Display -->
+            <div id="detectedValues"
+                style="display: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: center;">
+                <div style="font-size: 0.8rem; opacity: 0.9; margin-bottom: 5px;">✅ VALORI RILEVATI</div>
+                <div style="font-size: 1.5rem; font-weight: bold;">
+                    <span id="foundO2">O₂: --%</span> &nbsp; <span id="foundHe">He: --%</span>
+                </div>
+            </div>
 
             <!-- Debug Panel - shows OCR output -->
             <div id="ocrDebugPanel"
-                style="display: none; background: #1e293b; color: #94a3b8; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-family: monospace; font-size: 0.75rem; max-height: 150px; overflow-y: auto; text-align: left;">
-                <div style="color: #f8fafc; font-weight: bold; margin-bottom: 8px;">🔍 Debug OCR:</div>
+                style="display: none; background: #1e293b; color: #94a3b8; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-family: monospace; font-size: 0.75rem; max-height: 100px; overflow-y: auto; text-align: left;">
+                <div style="color: #f8fafc; font-weight: bold; margin-bottom: 8px;">🔍 Debug:</div>
                 <pre id="ocrDebugText" style="margin: 0; white-space: pre-wrap; word-break: break-all;"></pre>
             </div>
 
             <div class="modal-actions" id="modalControls">
                 <button class="btn btn-secondary" onclick="closeOcrModal()">Annulla</button>
-                <button class="btn btn-primary" id="captureBtn" onclick="captureAndProcess()">
-                    <i class="fas fa-camera"></i> Scatta & Analizza
-                </button>
-                <button class="btn btn-secondary" id="retryBtn" onclick="resetCamera()" style="display:none;">
-                    <i class="fas fa-redo"></i> Riprova
-                </button>
                 <button class="btn btn-primary" id="confirmBtn" onclick="confirmOcrValues()" style="display:none;">
-                    <i class="fas fa-check"></i> Conferma Valori
+                    <i class="fas fa-check"></i> Usa Questi Valori
                 </button>
             </div>
         </div>
@@ -934,7 +944,7 @@
             }
         }
 
-        // --- Logic: OCR (Tesseract) ---
+        // --- Logic: OCR - Continuous Stream Scanning (like QR readers) ---
 
         const OCR = {
             stream: null,
@@ -943,10 +953,10 @@
             modal: document.getElementById('ocrModal'),
             status: document.getElementById('ocrStatus'),
             loading: document.getElementById('ocrLoading'),
-            controls: {
-                capture: document.getElementById('captureBtn'),
-                retry: document.getElementById('retryBtn')
-            }
+            scanInterval: null,
+            readings: [], // Store multiple readings for voting
+            pendingValues: null,
+            isScanning: false
         };
 
         async function openOcrModal() {
@@ -956,21 +966,28 @@
                 window.location.hostname === '127.0.0.1';
 
             if (!isSecure) {
-                alert("⚠️ ATTENZIONE: La fotocamera NON funzionerà!\n\nI browser moderni (Chrome, Safari, per iOS/Android) bloccano l'accesso alla fotocamera se il sito non è sicuro (HTTPS).\n\nSoluzione: Carica questo file su un hosting sicuro (es. GitHub Pages, Netlify) o usa un server locale con HTTPS.");
-                return; // Non proviamo nemmeno, fallirebbe
+                alert("⚠️ ATTENZIONE: La fotocamera NON funzionerà!\n\nI browser moderni bloccano l'accesso alla fotocamera se il sito non è sicuro (HTTPS).\n\nSoluzione: Usa GitHub Pages o altro hosting HTTPS.");
+                return;
             }
 
             OCR.modal.classList.add('active');
-            OCR.status.textContent = "";
+            OCR.readings = [];
+            OCR.pendingValues = null;
+            OCR.isScanning = true;
+
+            // Reset UI
+            document.getElementById('liveDetection').style.display = 'none';
+            document.getElementById('detectedValues').style.display = 'none';
+            document.getElementById('confirmBtn').style.display = 'none';
+            document.getElementById('ocrDebugPanel').style.display = 'none';
+            OCR.status.textContent = "🔄 Avvio camera...";
             OCR.status.style.color = "var(--color-primary)";
-            resetCamera();
 
             try {
-                // Constraints optimization for mobile
                 const constraints = {
                     video: {
-                        facingMode: 'environment', // Rear camera preferred
-                        width: { ideal: 1280 },     // HD resolution for better OCR
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
                         height: { ideal: 720 }
                     }
                 };
@@ -978,29 +995,25 @@
                 OCR.stream = await navigator.mediaDevices.getUserMedia(constraints);
                 OCR.video.srcObject = OCR.stream;
 
-                // Explicit play required for some iOS versions
                 OCR.video.onloadedmetadata = () => {
                     OCR.video.play().catch(e => console.log("Play error:", e));
+                    // Start continuous scanning after video starts
+                    setTimeout(() => startContinuousScanning(), 500);
                 };
 
             } catch (err) {
-                console.error("Camera Error details:", err);
-
-                let msg = "Errore sconosciuto.";
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    msg = "Permesso negato. Devi autorizzare l'uso della fotocamera nelle impostazioni del browser.";
-                } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                    msg = "Nessuna fotocamera trovata.";
-                } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-                    msg = "Fotocamera già in uso da un'altra app.";
-                }
-
-                OCR.status.textContent = `Errore: ${msg}`;
+                console.error("Camera Error:", err);
+                OCR.status.textContent = `Errore camera: ${err.message}`;
                 OCR.status.style.color = "var(--color-danger)";
             }
         }
 
         function closeOcrModal() {
+            OCR.isScanning = false;
+            if (OCR.scanInterval) {
+                clearInterval(OCR.scanInterval);
+                OCR.scanInterval = null;
+            }
             if (OCR.stream) {
                 OCR.stream.getTracks().forEach(track => track.stop());
                 OCR.video.srcObject = null;
@@ -1008,18 +1021,143 @@
             OCR.modal.classList.remove('active');
         }
 
-        function resetCamera() {
-            OCR.video.style.display = 'block';
-            OCR.canvas.style.display = 'none';
-            OCR.loading.style.display = 'none';
-            OCR.controls.capture.style.display = 'inline-flex';
-            OCR.controls.retry.style.display = 'none';
-            document.getElementById('confirmBtn').style.display = 'none';
-            OCR.status.textContent = "Inquadra i valori...";
-            OCR.status.style.color = "var(--color-primary)";
-            // Hide debug panel and clear pending
-            document.getElementById('ocrDebugPanel').style.display = 'none';
-            OCR.pendingValues = null;
+        function startContinuousScanning() {
+            if (!OCR.isScanning) return;
+
+            OCR.status.textContent = "🔄 Scansione in corso... tieni fermo!";
+            document.getElementById('liveDetection').style.display = 'block';
+
+            // Analyze a frame every 1.5 seconds
+            OCR.scanInterval = setInterval(() => {
+                if (OCR.isScanning && OCR.video.readyState >= 2) {
+                    analyzeFrame();
+                }
+            }, 1500);
+
+            // Also do first scan immediately
+            analyzeFrame();
+        }
+
+        async function analyzeFrame() {
+            if (!OCR.isScanning) return;
+
+            // Capture current frame
+            OCR.canvas.width = OCR.video.videoWidth;
+            OCR.canvas.height = OCR.video.videoHeight;
+            const ctx = OCR.canvas.getContext('2d');
+            ctx.drawImage(OCR.video, 0, 0);
+
+            try {
+                // Use Tesseract for local analysis (faster for continuous scanning)
+                const { data: { text } } = await Tesseract.recognize(OCR.canvas, 'eng', {
+                    tessedit_char_whitelist: '0123456789.,%OoHheE:',
+                });
+
+                console.log("Frame OCR:", text);
+
+                // Update debug
+                const debugPanel = document.getElementById('ocrDebugPanel');
+                const debugText = document.getElementById('ocrDebugText');
+                debugPanel.style.display = 'block';
+                debugText.textContent = `Ultimo frame:\n${text.substring(0, 200)}`;
+
+                // Try to extract numbers
+                const parsed = parseOcrText(text);
+
+                // Update live display
+                const liveO2 = document.getElementById('liveO2');
+                const liveHe = document.getElementById('liveHe');
+
+                if (parsed.o2 !== null) {
+                    liveO2.textContent = `O₂: ${parsed.o2}%`;
+                    liveO2.style.color = '#10b981';
+                }
+                if (parsed.he !== null) {
+                    liveHe.textContent = `He: ${parsed.he}%`;
+                    liveHe.style.color = '#10b981';
+                }
+
+                // Add to readings for voting
+                if (parsed.o2 !== null || parsed.he !== null) {
+                    OCR.readings.push(parsed);
+
+                    // Keep only last 5 readings
+                    if (OCR.readings.length > 5) {
+                        OCR.readings.shift();
+                    }
+
+                    // Check for stable values (same value appears 2+ times)
+                    const stableValues = findStableValues(OCR.readings);
+
+                    if (stableValues.o2 !== null && stableValues.he !== null) {
+                        // We have stable readings for both values!
+                        showConfirmedValues(stableValues);
+                    }
+                }
+
+            } catch (e) {
+                console.warn("Frame analysis error:", e);
+            }
+        }
+
+        function findStableValues(readings) {
+            // Find values that appear at least 2 times (voting)
+            const o2Counts = {};
+            const heCounts = {};
+
+            for (const r of readings) {
+                if (r.o2 !== null) {
+                    const key = r.o2.toFixed(1);
+                    o2Counts[key] = (o2Counts[key] || 0) + 1;
+                }
+                if (r.he !== null) {
+                    const key = r.he.toFixed(1);
+                    heCounts[key] = (heCounts[key] || 0) + 1;
+                }
+            }
+
+            // Find most common values with at least 2 occurrences
+            let stableO2 = null;
+            let stableHe = null;
+
+            for (const [val, count] of Object.entries(o2Counts)) {
+                if (count >= 2 && (stableO2 === null || count > o2Counts[stableO2])) {
+                    stableO2 = parseFloat(val);
+                }
+            }
+
+            for (const [val, count] of Object.entries(heCounts)) {
+                if (count >= 2 && (stableHe === null || count > heCounts[stableHe])) {
+                    stableHe = parseFloat(val);
+                }
+            }
+
+            return { o2: stableO2, he: stableHe };
+        }
+
+        function showConfirmedValues(values) {
+            // Stop scanning - we found stable values
+            OCR.isScanning = false;
+            if (OCR.scanInterval) {
+                clearInterval(OCR.scanInterval);
+                OCR.scanInterval = null;
+            }
+
+            OCR.pendingValues = { found: true, ...values, temp: null };
+
+            // Update UI
+            OCR.status.textContent = "✅ Valori rilevati con successo!";
+            OCR.status.style.color = "var(--color-success)";
+
+            document.getElementById('foundO2').textContent = `O₂: ${values.o2}%`;
+            document.getElementById('foundHe').textContent = `He: ${values.he}%`;
+            document.getElementById('detectedValues').style.display = 'block';
+            document.getElementById('confirmBtn').style.display = 'inline-flex';
+
+            // Play success feedback (vibration on mobile)
+            if (navigator.vibrate) {
+                navigator.vibrate(200);
+            }
         }
 
         function confirmOcrValues() {
@@ -1034,146 +1172,6 @@
             updatePreview();
             saveSettings();
             closeOcrModal();
-        }
-
-        // --- OCR using OCR.space API (free, more accurate for displays) ---
-
-        const OCR_SPACE_API_KEY = 'K83918abordo788'; // Free demo key - get your own at ocr.space/ocrapi
-
-        async function captureAndProcess() {
-            // Freeze frame - capture original
-            OCR.canvas.width = OCR.video.videoWidth;
-            OCR.canvas.height = OCR.video.videoHeight;
-            const ctx = OCR.canvas.getContext('2d');
-            ctx.drawImage(OCR.video, 0, 0);
-
-            OCR.video.style.display = 'none';
-            OCR.canvas.style.display = 'block';
-            OCR.controls.capture.style.display = 'none';
-            OCR.loading.style.display = 'block';
-            OCR.status.textContent = "Invio immagine per analisi...";
-
-            let debugInfo = [];
-
-            try {
-                // Convert canvas to base64
-                const imageBase64 = OCR.canvas.toDataURL('image/png');
-
-                OCR.status.textContent = "Analisi OCR in corso...";
-
-                // Try OCR.space API first
-                let ocrText = '';
-                try {
-                    const response = await fetch('https://api.ocr.space/parse/image', {
-                        method: 'POST',
-                        headers: {
-                            'apikey': OCR_SPACE_API_KEY,
-                        },
-                        body: new URLSearchParams({
-                            'base64Image': imageBase64,
-                            'language': 'eng',
-                            'isOverlayRequired': 'false',
-                            'detectOrientation': 'true',
-                            'scale': 'true',
-                            'OCREngine': '2', // Engine 2 is better for displays
-                        })
-                    });
-
-                    const result = await response.json();
-                    console.log("OCR.space result:", result);
-                    debugInfo.push(`[OCR.space Engine 2]`);
-
-                    if (result.ParsedResults && result.ParsedResults.length > 0) {
-                        ocrText = result.ParsedResults[0].ParsedText || '';
-                        debugInfo.push(ocrText || '(nessun testo)');
-                    } else if (result.ErrorMessage) {
-                        debugInfo.push(`Errore: ${result.ErrorMessage}`);
-                    }
-
-                    // If Engine 2 didn't work well, try Engine 1
-                    if (!ocrText || ocrText.trim().length < 3) {
-                        const response2 = await fetch('https://api.ocr.space/parse/image', {
-                            method: 'POST',
-                            headers: {
-                                'apikey': OCR_SPACE_API_KEY,
-                            },
-                            body: new URLSearchParams({
-                                'base64Image': imageBase64,
-                                'language': 'eng',
-                                'isOverlayRequired': 'false',
-                                'OCREngine': '1',
-                            })
-                        });
-
-                        const result2 = await response2.json();
-                        debugInfo.push(`---\n[OCR.space Engine 1]`);
-
-                        if (result2.ParsedResults && result2.ParsedResults.length > 0) {
-                            const text2 = result2.ParsedResults[0].ParsedText || '';
-                            debugInfo.push(text2 || '(nessun testo)');
-                            if (text2.length > ocrText.length) {
-                                ocrText = text2;
-                            }
-                        }
-                    }
-
-                } catch (apiError) {
-                    console.warn("OCR.space API error, falling back to Tesseract:", apiError);
-                    debugInfo.push(`[API Error: ${apiError.message}]`);
-                    debugInfo.push("Fallback a Tesseract...");
-
-                    // Fallback to Tesseract
-                    const { data: { text } } = await Tesseract.recognize(OCR.canvas, 'eng');
-                    ocrText = text;
-                    debugInfo.push(`[Tesseract]\n${text}`);
-                }
-
-                console.log("Final OCR text:", ocrText);
-
-                // Parse the result
-                const parsed = parseOcrText(ocrText);
-
-                // Show debug panel
-                const debugPanel = document.getElementById('ocrDebugPanel');
-                const debugText = document.getElementById('ocrDebugText');
-                debugPanel.style.display = 'block';
-                debugText.textContent = debugInfo.join('\n');
-
-                if (parsed.found) {
-                    let statusMsg = "Trovati: ";
-                    if (parsed.o2 !== null) statusMsg += `O₂ ${parsed.o2}% `;
-                    if (parsed.he !== null) statusMsg += `He ${parsed.he}% `;
-                    if (parsed.temp !== null) statusMsg += `${parsed.temp}°C`;
-                    statusMsg += "\n⚠️ Verifica i valori prima di confermare!";
-
-                    OCR.status.innerText = statusMsg;
-                    OCR.status.style.color = "var(--color-success)";
-
-                    // Store pending values - don't apply yet
-                    OCR.pendingValues = parsed;
-
-                    // Show confirm and retry buttons
-                    OCR.controls.retry.style.display = 'inline-flex';
-                    document.getElementById('confirmBtn').style.display = 'inline-flex';
-                } else {
-                    throw new Error("Nessun valore leggibile trovato");
-                }
-
-            } catch (e) {
-                console.warn(e);
-
-                // Show debug panel even on error
-                const debugPanel = document.getElementById('ocrDebugPanel');
-                const debugText = document.getElementById('ocrDebugText');
-                debugPanel.style.display = 'block';
-                debugText.textContent = debugInfo.length > 0 ? debugInfo.join('\n') : 'Nessun testo rilevato';
-
-                OCR.status.textContent = "Non ho riconosciuto i dati. Riprova con più luce e stabilità.";
-                OCR.status.style.color = "var(--color-danger)";
-                OCR.controls.retry.style.display = 'inline-flex';
-            } finally {
-                OCR.loading.style.display = 'none';
-            }
         }
 
         function parseOcrText(text) {
