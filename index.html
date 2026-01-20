@@ -667,51 +667,75 @@
     </main>
 
     <footer>
-        <p style="font-weight: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">2026 KikoGen - Version 2.8</p>
+        <p style="font-weight: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">2026 KikoGen - Version 2.9</p>
     </footer>
 
-    <!-- OCR Modal -->
+    <!-- Camera-Assisted Input Modal -->
     <div id="ocrModal" class="modal-overlay">
-        <div class="modal-box">
-            <h3 style="font-size: 1.2rem; margin-bottom: 10px;">📷 Scansione Continua</h3>
-            <p style="color: var(--color-text-muted); font-size: 0.9rem;">Punta la camera sul display - i valori
-                appariranno automaticamente!</p>
+        <div class="modal-box" style="max-width: 400px;">
+            <h3 style="font-size: 1.2rem; margin-bottom: 10px;">📷 Lettura Analizzatore</h3>
+            <p style="color: var(--color-text-muted); font-size: 0.85rem;">Guarda il display e inserisci i valori</p>
 
-            <div class="camera-viewport" style="position: relative;">
-                <video id="videoElement" autoplay playsinline></video>
+            <div class="camera-viewport" style="position: relative; height: 200px;">
+                <video id="videoElement" autoplay playsinline
+                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;"></video>
                 <canvas id="captureCanvas" style="display:none;"></canvas>
-                <!-- Live detection overlay -->
-                <div id="liveDetection"
-                    style="position: absolute; bottom: 10px; left: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #10b981; padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; text-align: center; display: none;">
-                    <span id="liveO2">O₂: --</span> | <span id="liveHe">He: --</span>
+            </div>
+
+            <!-- Quick Input Section -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <!-- O2 Input -->
+                <div style="text-align: center;">
+                    <label
+                        style="font-size: 0.9rem; color: var(--color-text-muted); display: block; margin-bottom: 5px;">
+                        <i class="fas fa-lungs" style="color: var(--color-primary);"></i> Ossigeno (O₂)
+                    </label>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
+                        <button type="button" class="btn btn-secondary" style="padding: 8px 12px; font-size: 1.2rem;"
+                            onclick="adjustValue('o2', -0.1)">−</button>
+                        <input type="number" id="quickO2" value="21.0" step="0.1" min="0" max="100"
+                            style="width: 70px; text-align: center; font-size: 1.3rem; font-weight: bold; padding: 8px; border-radius: 8px; border: 2px solid var(--color-primary);">
+                        <button type="button" class="btn btn-secondary" style="padding: 8px 12px; font-size: 1.2rem;"
+                            onclick="adjustValue('o2', 0.1)">+</button>
+                    </div>
+                    <span style="font-size: 0.8rem; color: var(--color-text-muted);">%</span>
+                </div>
+
+                <!-- He Input -->
+                <div style="text-align: center;">
+                    <label
+                        style="font-size: 0.9rem; color: var(--color-text-muted); display: block; margin-bottom: 5px;">
+                        <i class="fas fa-wind" style="color: var(--color-primary);"></i> Elio (He)
+                    </label>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
+                        <button type="button" class="btn btn-secondary" style="padding: 8px 12px; font-size: 1.2rem;"
+                            onclick="adjustValue('he', -0.1)">−</button>
+                        <input type="number" id="quickHe" value="0.0" step="0.1" min="0" max="100"
+                            style="width: 70px; text-align: center; font-size: 1.3rem; font-weight: bold; padding: 8px; border-radius: 8px; border: 2px solid var(--color-primary);">
+                        <button type="button" class="btn btn-secondary" style="padding: 8px 12px; font-size: 1.2rem;"
+                            onclick="adjustValue('he', 0.1)">+</button>
+                    </div>
+                    <span style="font-size: 0.8rem; color: var(--color-text-muted);">%</span>
                 </div>
             </div>
 
-            <div id="ocrLoading" class="spinner"></div>
-            <p id="ocrStatus"
-                style="min-height: 24px; color: var(--color-primary); font-weight: 500; font-size: 0.9rem; margin-bottom: 15px;">
-                🔄 Scansione in corso... tieni fermo il telefono
-            </p>
-
-            <!-- Detected Values Display -->
-            <div id="detectedValues"
-                style="display: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: center;">
-                <div style="font-size: 0.8rem; opacity: 0.9; margin-bottom: 5px;">✅ VALORI RILEVATI</div>
-                <div style="font-size: 1.5rem; font-weight: bold;">
-                    <span id="foundO2">O₂: --%</span> &nbsp; <span id="foundHe">He: --%</span>
-                </div>
+            <!-- Quick presets -->
+            <div style="margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;"
+                    onclick="setPreset(21, 0)">Aria 21/0</button>
+                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;"
+                    onclick="setPreset(32, 0)">EAN32</button>
+                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;"
+                    onclick="setPreset(36, 0)">EAN36</button>
+                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;"
+                    onclick="setPreset(21, 35)">TMX 21/35</button>
+                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;"
+                    onclick="setPreset(18, 45)">TMX 18/45</button>
             </div>
 
-            <!-- Debug Panel - shows OCR output -->
-            <div id="ocrDebugPanel"
-                style="display: none; background: #1e293b; color: #94a3b8; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-family: monospace; font-size: 0.75rem; max-height: 100px; overflow-y: auto; text-align: left;">
-                <div style="color: #f8fafc; font-weight: bold; margin-bottom: 8px;">🔍 Debug:</div>
-                <pre id="ocrDebugText" style="margin: 0; white-space: pre-wrap; word-break: break-all;"></pre>
-            </div>
-
-            <div class="modal-actions" id="modalControls">
+            <div class="modal-actions" style="margin-top: 20px;">
                 <button class="btn btn-secondary" onclick="closeOcrModal()">Annulla</button>
-                <button class="btn btn-primary" id="confirmBtn" onclick="confirmOcrValues()" style="display:none;">
+                <button class="btn btn-primary" onclick="confirmQuickValues()">
                     <i class="fas fa-check"></i> Usa Questi Valori
                 </button>
             </div>
@@ -721,7 +745,6 @@
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src='https://unpkg.com/tesseract.js@4.1.0/dist/tesseract.min.js'></script>
 
     <script>
         // --- Configuration & State ---
@@ -944,19 +967,12 @@
             }
         }
 
-        // --- Logic: OCR - Continuous Stream Scanning (like QR readers) ---
+        // --- Logic: Camera-Assisted Manual Input ---
 
         const OCR = {
             stream: null,
             video: document.getElementById('videoElement'),
-            canvas: document.getElementById('captureCanvas'),
-            modal: document.getElementById('ocrModal'),
-            status: document.getElementById('ocrStatus'),
-            loading: document.getElementById('ocrLoading'),
-            scanInterval: null,
-            readings: [], // Store multiple readings for voting
-            pendingValues: null,
-            isScanning: false
+            modal: document.getElementById('ocrModal')
         };
 
         async function openOcrModal() {
@@ -966,22 +982,15 @@
                 window.location.hostname === '127.0.0.1';
 
             if (!isSecure) {
-                alert("⚠️ ATTENZIONE: La fotocamera NON funzionerà!\n\nI browser moderni bloccano l'accesso alla fotocamera se il sito non è sicuro (HTTPS).\n\nSoluzione: Usa GitHub Pages o altro hosting HTTPS.");
+                alert("⚠️ La fotocamera richiede HTTPS.\n\nUsa GitHub Pages o altro hosting sicuro.");
                 return;
             }
 
             OCR.modal.classList.add('active');
-            OCR.readings = [];
-            OCR.pendingValues = null;
-            OCR.isScanning = true;
 
-            // Reset UI
-            document.getElementById('liveDetection').style.display = 'none';
-            document.getElementById('detectedValues').style.display = 'none';
-            document.getElementById('confirmBtn').style.display = 'none';
-            document.getElementById('ocrDebugPanel').style.display = 'none';
-            OCR.status.textContent = "🔄 Avvio camera...";
-            OCR.status.style.color = "var(--color-primary)";
+            // Pre-fill with current values
+            document.getElementById('quickO2').value = DOM.inputs.o2Input.value || 21.0;
+            document.getElementById('quickHe').value = DOM.inputs.heInput.value || 0.0;
 
             try {
                 const constraints = {
@@ -994,26 +1003,15 @@
 
                 OCR.stream = await navigator.mediaDevices.getUserMedia(constraints);
                 OCR.video.srcObject = OCR.stream;
-
-                OCR.video.onloadedmetadata = () => {
-                    OCR.video.play().catch(e => console.log("Play error:", e));
-                    // Start continuous scanning after video starts
-                    setTimeout(() => startContinuousScanning(), 500);
-                };
+                OCR.video.play().catch(e => console.log("Play error:", e));
 
             } catch (err) {
                 console.error("Camera Error:", err);
-                OCR.status.textContent = `Errore camera: ${err.message}`;
-                OCR.status.style.color = "var(--color-danger)";
+                // Camera failed but modal still works for manual input
             }
         }
 
         function closeOcrModal() {
-            OCR.isScanning = false;
-            if (OCR.scanInterval) {
-                clearInterval(OCR.scanInterval);
-                OCR.scanInterval = null;
-            }
             if (OCR.stream) {
                 OCR.stream.getTracks().forEach(track => track.stop());
                 OCR.video.srcObject = null;
@@ -1021,157 +1019,33 @@
             OCR.modal.classList.remove('active');
         }
 
-        function startContinuousScanning() {
-            if (!OCR.isScanning) return;
-
-            OCR.status.textContent = "🔄 Scansione in corso... tieni fermo!";
-            document.getElementById('liveDetection').style.display = 'block';
-
-            // Analyze a frame every 1.5 seconds
-            OCR.scanInterval = setInterval(() => {
-                if (OCR.isScanning && OCR.video.readyState >= 2) {
-                    analyzeFrame();
-                }
-            }, 1500);
-
-            // Also do first scan immediately
-            analyzeFrame();
+        function adjustValue(type, delta) {
+            const input = document.getElementById(type === 'o2' ? 'quickO2' : 'quickHe');
+            let value = parseFloat(input.value) || 0;
+            value = Math.max(0, Math.min(100, value + delta));
+            input.value = value.toFixed(1);
         }
 
-        async function analyzeFrame() {
-            if (!OCR.isScanning) return;
-
-            // Capture current frame
-            OCR.canvas.width = OCR.video.videoWidth;
-            OCR.canvas.height = OCR.video.videoHeight;
-            const ctx = OCR.canvas.getContext('2d');
-            ctx.drawImage(OCR.video, 0, 0);
-
-            try {
-                // Use Tesseract for local analysis (faster for continuous scanning)
-                const { data: { text } } = await Tesseract.recognize(OCR.canvas, 'eng', {
-                    tessedit_char_whitelist: '0123456789.,%OoHheE:',
-                });
-
-                console.log("Frame OCR:", text);
-
-                // Update debug
-                const debugPanel = document.getElementById('ocrDebugPanel');
-                const debugText = document.getElementById('ocrDebugText');
-                debugPanel.style.display = 'block';
-                debugText.textContent = `Ultimo frame:\n${text.substring(0, 200)}`;
-
-                // Try to extract numbers
-                const parsed = parseOcrText(text);
-
-                // Update live display
-                const liveO2 = document.getElementById('liveO2');
-                const liveHe = document.getElementById('liveHe');
-
-                if (parsed.o2 !== null) {
-                    liveO2.textContent = `O₂: ${parsed.o2}%`;
-                    liveO2.style.color = '#10b981';
-                }
-                if (parsed.he !== null) {
-                    liveHe.textContent = `He: ${parsed.he}%`;
-                    liveHe.style.color = '#10b981';
-                }
-
-                // Add to readings for voting
-                if (parsed.o2 !== null || parsed.he !== null) {
-                    OCR.readings.push(parsed);
-
-                    // Keep only last 5 readings
-                    if (OCR.readings.length > 5) {
-                        OCR.readings.shift();
-                    }
-
-                    // Check for stable values (same value appears 2+ times)
-                    const stableValues = findStableValues(OCR.readings);
-
-                    if (stableValues.o2 !== null && stableValues.he !== null) {
-                        // We have stable readings for both values!
-                        showConfirmedValues(stableValues);
-                    }
-                }
-
-            } catch (e) {
-                console.warn("Frame analysis error:", e);
-            }
+        function setPreset(o2, he) {
+            document.getElementById('quickO2').value = o2.toFixed(1);
+            document.getElementById('quickHe').value = he.toFixed(1);
         }
 
-        function findStableValues(readings) {
-            // Find values that appear at least 2 times (voting)
-            const o2Counts = {};
-            const heCounts = {};
+        function confirmQuickValues() {
+            const o2 = parseFloat(document.getElementById('quickO2').value) || 0;
+            const he = parseFloat(document.getElementById('quickHe').value) || 0;
 
-            for (const r of readings) {
-                if (r.o2 !== null) {
-                    const key = r.o2.toFixed(1);
-                    o2Counts[key] = (o2Counts[key] || 0) + 1;
-                }
-                if (r.he !== null) {
-                    const key = r.he.toFixed(1);
-                    heCounts[key] = (heCounts[key] || 0) + 1;
-                }
-            }
-
-            // Find most common values with at least 2 occurrences
-            let stableO2 = null;
-            let stableHe = null;
-
-            for (const [val, count] of Object.entries(o2Counts)) {
-                if (count >= 2 && (stableO2 === null || count > o2Counts[stableO2])) {
-                    stableO2 = parseFloat(val);
-                }
-            }
-
-            for (const [val, count] of Object.entries(heCounts)) {
-                if (count >= 2 && (stableHe === null || count > heCounts[stableHe])) {
-                    stableHe = parseFloat(val);
-                }
-            }
-
-            return { o2: stableO2, he: stableHe };
-        }
-
-        function showConfirmedValues(values) {
-            // Stop scanning - we found stable values
-            OCR.isScanning = false;
-            if (OCR.scanInterval) {
-                clearInterval(OCR.scanInterval);
-                OCR.scanInterval = null;
-            }
-
-            OCR.pendingValues = { found: true, ...values, temp: null };
-
-            // Update UI
-            OCR.status.textContent = "✅ Valori rilevati con successo!";
-            OCR.status.style.color = "var(--color-success)";
-
-            document.getElementById('foundO2').textContent = `O₂: ${values.o2}%`;
-            document.getElementById('foundHe').textContent = `He: ${values.he}%`;
-            document.getElementById('detectedValues').style.display = 'block';
-            document.getElementById('confirmBtn').style.display = 'inline-flex';
-
-            // Play success feedback (vibration on mobile)
-            if (navigator.vibrate) {
-                navigator.vibrate(200);
-            }
-        }
-
-        function confirmOcrValues() {
-            if (!OCR.pendingValues) return;
-
-            const values = OCR.pendingValues;
-
-            if (values.o2 !== null) DOM.inputs.o2Input.value = values.o2;
-            if (values.he !== null) DOM.inputs.heInput.value = values.he;
-            if (values.temp !== null) DOM.inputs.temperatureInput.value = values.temp;
+            DOM.inputs.o2Input.value = o2;
+            DOM.inputs.heInput.value = he;
 
             updatePreview();
             saveSettings();
             closeOcrModal();
+
+            // Vibrate on success
+            if (navigator.vibrate) {
+                navigator.vibrate(100);
+            }
         }
 
         function parseOcrText(text) {
