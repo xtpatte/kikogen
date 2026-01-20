@@ -667,76 +667,76 @@
     </main>
 
     <footer>
-        <p style="font-weight: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">2026 KikoGen - Version 2.9</p>
+        <p style="font-weight: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">2026 KikoGen - Version 3.0</p>
     </footer>
 
-    <!-- Camera-Assisted Input Modal -->
+    <!-- Smart Scanner Modal -->
     <div id="ocrModal" class="modal-overlay">
-        <div class="modal-box" style="max-width: 400px;">
-            <h3 style="font-size: 1.2rem; margin-bottom: 10px;">📷 Lettura Analizzatore</h3>
-            <p style="color: var(--color-text-muted); font-size: 0.85rem;">Guarda il display e inserisci i valori</p>
+        <div class="modal-box" style="max-width: 420px;">
+            <h3 style="font-size: 1.2rem; margin-bottom: 10px;">📷 Scansione Divesoft</h3>
+            <p id="scanInstructions" style="color: var(--color-text-muted); font-size: 0.85rem;">Inquadra il display
+                dell'analizzatore</p>
 
-            <div class="camera-viewport" style="position: relative; height: 200px;">
+            <div class="camera-viewport" style="position: relative; height: 220px; background: #000;">
                 <video id="videoElement" autoplay playsinline
                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;"></video>
                 <canvas id="captureCanvas" style="display:none;"></canvas>
+                <!-- Processing overlay -->
+                <div id="processingOverlay"
+                    style="display:none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                    <div style="color: #fff; text-align: center;">
+                        <div class="spinner"></div>
+                        <p style="margin-top: 10px;">Analisi in corso...</p>
+                    </div>
+                </div>
             </div>
 
-            <!-- Quick Input Section -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-                <!-- O2 Input -->
-                <div style="text-align: center;">
-                    <label
-                        style="font-size: 0.9rem; color: var(--color-text-muted); display: block; margin-bottom: 5px;">
-                        <i class="fas fa-lungs" style="color: var(--color-primary);"></i> Ossigeno (O₂)
-                    </label>
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
-                        <button type="button" class="btn btn-secondary" style="padding: 8px 12px; font-size: 1.2rem;"
-                            onclick="adjustValue('o2', -0.1)">−</button>
+            <!-- Scan button -->
+            <div style="text-align: center; margin: 15px 0;">
+                <button id="scanBtn" class="btn btn-primary" onclick="scanDisplay()"
+                    style="padding: 12px 30px; font-size: 1rem;">
+                    <i class="fas fa-crosshairs"></i> Scansiona Display
+                </button>
+            </div>
+
+            <!-- Results display -->
+            <div id="scanResults"
+                style="display: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: center;">
+                <div style="font-size: 0.8rem; opacity: 0.9; margin-bottom: 5px;">✅ VALORI RILEVATI</div>
+                <div style="font-size: 1.5rem; font-weight: bold;">
+                    O₂: <span id="detectedO2">--</span>% &nbsp; He: <span id="detectedHe">--</span>%
+                </div>
+            </div>
+
+            <!-- Debug panel -->
+            <div id="debugPanel"
+                style="display: none; background: #1e293b; color: #94a3b8; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-family: monospace; font-size: 0.7rem; max-height: 80px; overflow-y: auto;">
+                <pre id="debugText" style="margin: 0;"></pre>
+            </div>
+
+            <!-- Manual input section (collapsible) -->
+            <details style="margin-bottom: 15px;">
+                <summary style="cursor: pointer; color: var(--color-text-muted); font-size: 0.85rem;">📝 Inserimento
+                    manuale</summary>
+                <div
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 8px;">
+                    <div style="text-align: center;">
+                        <label style="font-size: 0.8rem; color: var(--color-text-muted);">O₂ %</label>
                         <input type="number" id="quickO2" value="21.0" step="0.1" min="0" max="100"
-                            style="width: 70px; text-align: center; font-size: 1.3rem; font-weight: bold; padding: 8px; border-radius: 8px; border: 2px solid var(--color-primary);">
-                        <button type="button" class="btn btn-secondary" style="padding: 8px 12px; font-size: 1.2rem;"
-                            onclick="adjustValue('o2', 0.1)">+</button>
+                            style="width: 80px; text-align: center; font-size: 1.1rem; padding: 6px; border-radius: 6px; border: 1px solid var(--color-border);">
                     </div>
-                    <span style="font-size: 0.8rem; color: var(--color-text-muted);">%</span>
-                </div>
-
-                <!-- He Input -->
-                <div style="text-align: center;">
-                    <label
-                        style="font-size: 0.9rem; color: var(--color-text-muted); display: block; margin-bottom: 5px;">
-                        <i class="fas fa-wind" style="color: var(--color-primary);"></i> Elio (He)
-                    </label>
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
-                        <button type="button" class="btn btn-secondary" style="padding: 8px 12px; font-size: 1.2rem;"
-                            onclick="adjustValue('he', -0.1)">−</button>
+                    <div style="text-align: center;">
+                        <label style="font-size: 0.8rem; color: var(--color-text-muted);">He %</label>
                         <input type="number" id="quickHe" value="0.0" step="0.1" min="0" max="100"
-                            style="width: 70px; text-align: center; font-size: 1.3rem; font-weight: bold; padding: 8px; border-radius: 8px; border: 2px solid var(--color-primary);">
-                        <button type="button" class="btn btn-secondary" style="padding: 8px 12px; font-size: 1.2rem;"
-                            onclick="adjustValue('he', 0.1)">+</button>
+                            style="width: 80px; text-align: center; font-size: 1.1rem; padding: 6px; border-radius: 6px; border: 1px solid var(--color-border);">
                     </div>
-                    <span style="font-size: 0.8rem; color: var(--color-text-muted);">%</span>
                 </div>
-            </div>
+            </details>
 
-            <!-- Quick presets -->
-            <div style="margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
-                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;"
-                    onclick="setPreset(21, 0)">Aria 21/0</button>
-                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;"
-                    onclick="setPreset(32, 0)">EAN32</button>
-                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;"
-                    onclick="setPreset(36, 0)">EAN36</button>
-                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;"
-                    onclick="setPreset(21, 35)">TMX 21/35</button>
-                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;"
-                    onclick="setPreset(18, 45)">TMX 18/45</button>
-            </div>
-
-            <div class="modal-actions" style="margin-top: 20px;">
+            <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeOcrModal()">Annulla</button>
-                <button class="btn btn-primary" onclick="confirmQuickValues()">
-                    <i class="fas fa-check"></i> Usa Questi Valori
+                <button id="confirmBtn" class="btn btn-primary" onclick="confirmScanValues()" style="display: none;">
+                    <i class="fas fa-check"></i> Usa Valori
                 </button>
             </div>
         </div>
@@ -967,16 +967,37 @@
             }
         }
 
-        // --- Logic: Camera-Assisted Manual Input ---
+        // --- Logic: Smart Digit Recognition for Divesoft Display ---
 
         const OCR = {
             stream: null,
             video: document.getElementById('videoElement'),
-            modal: document.getElementById('ocrModal')
+            canvas: document.getElementById('captureCanvas'),
+            modal: document.getElementById('ocrModal'),
+            detectedO2: null,
+            detectedHe: null
+        };
+
+        // 7-segment digit patterns (which segments are ON for each digit)
+        // Segment layout:  0
+        //                 1 2
+        //                  3
+        //                 4 5
+        //                  6
+        const DIGIT_PATTERNS = {
+            '0': [1, 1, 1, 0, 1, 1, 1],
+            '1': [0, 0, 1, 0, 0, 1, 0],
+            '2': [1, 0, 1, 1, 1, 0, 1],
+            '3': [1, 0, 1, 1, 0, 1, 1],
+            '4': [0, 1, 1, 1, 0, 1, 0],
+            '5': [1, 1, 0, 1, 0, 1, 1],
+            '6': [1, 1, 0, 1, 1, 1, 1],
+            '7': [1, 0, 1, 0, 0, 1, 0],
+            '8': [1, 1, 1, 1, 1, 1, 1],
+            '9': [1, 1, 1, 1, 0, 1, 1]
         };
 
         async function openOcrModal() {
-            // SECURITY CHECK: Camera requires HTTPS or Localhost
             const isSecure = window.location.protocol === 'https:' ||
                 window.location.hostname === 'localhost' ||
                 window.location.hostname === '127.0.0.1';
@@ -987,8 +1008,17 @@
             }
 
             OCR.modal.classList.add('active');
+            OCR.detectedO2 = null;
+            OCR.detectedHe = null;
 
-            // Pre-fill with current values
+            // Reset UI
+            document.getElementById('scanResults').style.display = 'none';
+            document.getElementById('confirmBtn').style.display = 'none';
+            document.getElementById('debugPanel').style.display = 'none';
+            document.getElementById('scanBtn').disabled = false;
+            document.getElementById('scanInstructions').textContent = "Inquadra il display dell'analizzatore";
+
+            // Pre-fill manual inputs
             document.getElementById('quickO2').value = DOM.inputs.o2Input.value || 21.0;
             document.getElementById('quickHe').value = DOM.inputs.heInput.value || 0.0;
 
@@ -996,8 +1026,8 @@
                 const constraints = {
                     video: {
                         facingMode: 'environment',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
                     }
                 };
 
@@ -1007,7 +1037,7 @@
 
             } catch (err) {
                 console.error("Camera Error:", err);
-                // Camera failed but modal still works for manual input
+                document.getElementById('scanInstructions').textContent = "Camera non disponibile - usa input manuale";
             }
         }
 
@@ -1019,21 +1049,263 @@
             OCR.modal.classList.remove('active');
         }
 
-        function adjustValue(type, delta) {
-            const input = document.getElementById(type === 'o2' ? 'quickO2' : 'quickHe');
-            let value = parseFloat(input.value) || 0;
-            value = Math.max(0, Math.min(100, value + delta));
-            input.value = value.toFixed(1);
+        async function scanDisplay() {
+            const scanBtn = document.getElementById('scanBtn');
+            const debugPanel = document.getElementById('debugPanel');
+            const debugText = document.getElementById('debugText');
+
+            scanBtn.disabled = true;
+            scanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analisi...';
+            debugPanel.style.display = 'block';
+            debugText.textContent = 'Cattura immagine...';
+
+            try {
+                // Capture frame
+                OCR.canvas.width = OCR.video.videoWidth;
+                OCR.canvas.height = OCR.video.videoHeight;
+                const ctx = OCR.canvas.getContext('2d');
+                ctx.drawImage(OCR.video, 0, 0);
+
+                debugText.textContent = `Immagine: ${OCR.canvas.width}x${OCR.canvas.height}\nEstrazione pixel gialli...`;
+
+                // Extract yellow pixels (Divesoft display color)
+                const imageData = ctx.getImageData(0, 0, OCR.canvas.width, OCR.canvas.height);
+                const yellowMask = extractYellowPixels(imageData);
+
+                debugText.textContent += `\nPixel gialli trovati: ${yellowMask.count}`;
+
+                // Find digit regions by analyzing rows
+                const result = recognizeDigits(yellowMask, OCR.canvas.width, OCR.canvas.height);
+
+                debugText.textContent += `\nRighe trovate: ${result.rows}`;
+                debugText.textContent += `\nValori: O2=${result.o2 || '?'}, He=${result.he || '?'}`;
+
+                if (result.o2 !== null || result.he !== null) {
+                    OCR.detectedO2 = result.o2;
+                    OCR.detectedHe = result.he;
+
+                    document.getElementById('detectedO2').textContent = result.o2 !== null ? result.o2.toFixed(1) : '--';
+                    document.getElementById('detectedHe').textContent = result.he !== null ? result.he.toFixed(1) : '--';
+                    document.getElementById('scanResults').style.display = 'block';
+                    document.getElementById('confirmBtn').style.display = 'inline-flex';
+                    document.getElementById('scanInstructions').textContent = '✅ Valori rilevati! Verifica e conferma.';
+
+                    if (navigator.vibrate) navigator.vibrate(200);
+                } else {
+                    document.getElementById('scanInstructions').textContent = '❌ Non riesco a leggere. Riprova o usa input manuale.';
+                }
+
+            } catch (e) {
+                console.error('Scan error:', e);
+                debugText.textContent += `\nErrore: ${e.message}`;
+                document.getElementById('scanInstructions').textContent = '❌ Errore durante la scansione.';
+            } finally {
+                scanBtn.disabled = false;
+                scanBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Scansiona Display';
+            }
         }
 
-        function setPreset(o2, he) {
-            document.getElementById('quickO2').value = o2.toFixed(1);
-            document.getElementById('quickHe').value = he.toFixed(1);
+        function extractYellowPixels(imageData) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const mask = new Uint8Array(width * height);
+            let count = 0;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Detect yellow/amber pixels (Divesoft display)
+                // Yellow has high R, high G, low B
+                const isYellow = (r > 150 && g > 100 && b < 120 && r > b * 1.5);
+
+                // Also detect bright white-ish yellow
+                const isBright = (r > 200 && g > 180 && b < 150);
+
+                if (isYellow || isBright) {
+                    mask[i / 4] = 1;
+                    count++;
+                }
+            }
+
+            return { mask, count, width, height };
         }
 
-        function confirmQuickValues() {
-            const o2 = parseFloat(document.getElementById('quickO2').value) || 0;
-            const he = parseFloat(document.getElementById('quickHe').value) || 0;
+        function recognizeDigits(yellowMask, width, height) {
+            const { mask } = yellowMask;
+
+            // Find horizontal bands with yellow pixels (these are the digit rows)
+            const rowDensity = new Array(height).fill(0);
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    if (mask[y * width + x]) {
+                        rowDensity[y]++;
+                    }
+                }
+            }
+
+            // Find the two main rows (O2 and He)
+            const threshold = Math.max(...rowDensity) * 0.3;
+            const bands = [];
+            let inBand = false;
+            let bandStart = 0;
+
+            for (let y = 0; y < height; y++) {
+                if (rowDensity[y] > threshold && !inBand) {
+                    inBand = true;
+                    bandStart = y;
+                } else if (rowDensity[y] <= threshold && inBand) {
+                    inBand = false;
+                    if (y - bandStart > 10) { // Minimum band height
+                        bands.push({ start: bandStart, end: y });
+                    }
+                }
+            }
+
+            // We expect 2 bands: O2 (top) and He (bottom)
+            // For each band, try to extract the number
+            let o2Value = null;
+            let heValue = null;
+
+            if (bands.length >= 1) {
+                o2Value = extractNumberFromBand(mask, width, bands[0]);
+            }
+            if (bands.length >= 2) {
+                heValue = extractNumberFromBand(mask, width, bands[1]);
+            }
+
+            return { o2: o2Value, he: heValue, rows: bands.length };
+        }
+
+        function extractNumberFromBand(mask, width, band) {
+            const { start, end } = band;
+            const bandHeight = end - start;
+
+            // Find vertical slices with pixels (these are digits)
+            const colDensity = new Array(width).fill(0);
+            for (let y = start; y < end; y++) {
+                for (let x = 0; x < width; x++) {
+                    if (mask[y * width + x]) {
+                        colDensity[x]++;
+                    }
+                }
+            }
+
+            // Find digit columns
+            const threshold = bandHeight * 0.1;
+            const digits = [];
+            let inDigit = false;
+            let digitStart = 0;
+
+            for (let x = 0; x < width; x++) {
+                if (colDensity[x] > threshold && !inDigit) {
+                    inDigit = true;
+                    digitStart = x;
+                } else if (colDensity[x] <= threshold && inDigit) {
+                    inDigit = false;
+                    const digitWidth = x - digitStart;
+                    if (digitWidth > 5) { // Minimum digit width
+                        // Check if this is a decimal point (small and at bottom)
+                        const isDecimal = digitWidth < bandHeight * 0.3;
+                        digits.push({
+                            start: digitStart,
+                            end: x,
+                            isDecimal,
+                            bandStart: start,
+                            bandEnd: end
+                        });
+                    }
+                }
+            }
+
+            // Convert column regions to numbers
+            let numberStr = '';
+            for (const digit of digits) {
+                if (digit.isDecimal) {
+                    numberStr += '.';
+                } else {
+                    const recognized = recognizeSingleDigit(mask, width, digit);
+                    numberStr += recognized;
+                }
+            }
+
+            // Try to parse the number
+            const num = parseFloat(numberStr);
+            return isNaN(num) ? null : num;
+        }
+
+        function recognizeSingleDigit(mask, width, digit) {
+            const { start, end, bandStart, bandEnd } = digit;
+            const digitWidth = end - start;
+            const digitHeight = bandEnd - bandStart;
+
+            // Sample 7 segment regions
+            const segments = [
+                // Top horizontal (segment 0)
+                sampleRegion(mask, width, start, bandStart, end, bandStart + digitHeight * 0.15),
+                // Top-left vertical (segment 1)
+                sampleRegion(mask, width, start, bandStart, start + digitWidth * 0.3, bandStart + digitHeight * 0.5),
+                // Top-right vertical (segment 2)
+                sampleRegion(mask, width, end - digitWidth * 0.3, bandStart, end, bandStart + digitHeight * 0.5),
+                // Middle horizontal (segment 3)
+                sampleRegion(mask, width, start, bandStart + digitHeight * 0.42, end, bandStart + digitHeight * 0.58),
+                // Bottom-left vertical (segment 4)
+                sampleRegion(mask, width, start, bandStart + digitHeight * 0.5, start + digitWidth * 0.3, bandEnd),
+                // Bottom-right vertical (segment 5)
+                sampleRegion(mask, width, end - digitWidth * 0.3, bandStart + digitHeight * 0.5, end, bandEnd),
+                // Bottom horizontal (segment 6)
+                sampleRegion(mask, width, start, bandEnd - digitHeight * 0.15, end, bandEnd)
+            ];
+
+            // Match against known patterns
+            let bestMatch = '?';
+            let bestScore = -1;
+
+            for (const [digit, pattern] of Object.entries(DIGIT_PATTERNS)) {
+                let score = 0;
+                for (let i = 0; i < 7; i++) {
+                    if ((segments[i] > 0.3) === (pattern[i] === 1)) {
+                        score++;
+                    }
+                }
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMatch = digit;
+                }
+            }
+
+            return bestScore >= 5 ? bestMatch : '?';
+        }
+
+        function sampleRegion(mask, width, x1, y1, x2, y2) {
+            x1 = Math.floor(x1);
+            y1 = Math.floor(y1);
+            x2 = Math.floor(x2);
+            y2 = Math.floor(y2);
+
+            let count = 0;
+            let total = 0;
+
+            for (let y = y1; y < y2; y++) {
+                for (let x = x1; x < x2; x++) {
+                    if (mask[y * width + x]) count++;
+                    total++;
+                }
+            }
+
+            return total > 0 ? count / total : 0;
+        }
+
+        function confirmScanValues() {
+            // Use detected values, or fall back to manual input
+            let o2 = OCR.detectedO2;
+            let he = OCR.detectedHe;
+
+            // If auto-detection failed, use manual values
+            if (o2 === null) o2 = parseFloat(document.getElementById('quickO2').value) || 21;
+            if (he === null) he = parseFloat(document.getElementById('quickHe').value) || 0;
 
             DOM.inputs.o2Input.value = o2;
             DOM.inputs.heInput.value = he;
@@ -1042,10 +1314,7 @@
             saveSettings();
             closeOcrModal();
 
-            // Vibrate on success
-            if (navigator.vibrate) {
-                navigator.vibrate(100);
-            }
+            if (navigator.vibrate) navigator.vibrate(100);
         }
 
         function parseOcrText(text) {
