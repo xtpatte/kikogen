@@ -667,7 +667,7 @@
     </main>
 
     <footer>
-        <p style="font-weight: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">2026 KikoGen - Version 2.1</p>
+        <p style="font-weight: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">2026 KikoGen - Version 2.3</p>
     </footer>
 
     <!-- OCR Modal -->
@@ -1032,7 +1032,7 @@
                     const brightness = (r + g + b) / 3;
                     const isYellow = (r > 150 && g > 100 && b < 150); // Detect yellow-ish
                     const isBright = brightness > 100;
-                    
+
                     if (isYellow || isBright) {
                         data[i] = data[i + 1] = data[i + 2] = 0; // Black text
                     } else {
@@ -1082,7 +1082,7 @@
                 for (const strategy of strategies) {
                     // Restore original image
                     ctx.putImageData(originalImageData, 0, 0);
-                    
+
                     // Apply preprocessing if specified
                     if (strategy.mode) {
                         preprocessImage(OCR.canvas, strategy.mode);
@@ -1093,20 +1093,20 @@
                     const { data: { text } } = await Tesseract.recognize(OCR.canvas, 'eng', {
                         tessedit_char_whitelist: '0123456789.,OoHhEeTtEeMmPpXxYyGgAaIiNnUuSsRr:% ',
                     });
-                    
+
                     console.log(`OCR [${strategy.name}]:`, text);
                     allTexts.push(`[${strategy.name}] ${text}`);
 
                     const parsed = parseOcrText(text);
-                    
+
                     // Count how many values we found
                     const foundCount = [parsed.o2, parsed.he, parsed.temp].filter(v => v !== null).length;
                     const bestCount = [bestResult.o2, bestResult.he, bestResult.temp].filter(v => v !== null).length;
-                    
+
                     if (foundCount > bestCount) {
                         bestResult = parsed;
                     }
-                    
+
                     // If we found both O2 and He, that's good enough
                     if (parsed.o2 !== null && parsed.he !== null) {
                         bestResult = parsed;
@@ -1116,7 +1116,7 @@
 
                 // Restore original for display
                 ctx.putImageData(originalImageData, 0, 0);
-                
+
                 console.log("All OCR attempts:", allTexts.join('\n'));
 
                 if (bestResult.found) {
@@ -1154,50 +1154,144 @@
         function parseOcrText(text) {
             let result = { found: false, o2: null, he: null, temp: null };
 
-            // Helper to clean and parse float
-            const extractNum = (match) => {
-                if (!match) return null;
-                // Replace comma with dot, remove any non-numeric chars except dot/comma
-                const raw = match[1].replace(/,/g, '.');
-                const val = parseFloat(raw);
+            // Clean up common OCR errors
+            let clean = text
+                .replace(/[oO]2/g, 'O2')
+                .replace(/[hH][eE]/g, 'He')
+                .replace(/\|/g, '1')  // Pipe often misread as 1
+                .replace(/l/g, '1')   // lowercase L often misread as 1
+                .replace(/O(?=\d)/g, '0')  // O before digit is probably 0
+                .replace(/,/g, '.');  // Normalize decimal separator
+
+            console.log("Cleaned OCR text:", clean);
+
+            // Helper to parse float safely
+            const parseNum = (str) => {
+                if (!str) return null;
+                const val = parseFloat(str.replace(',', '.'));
                 return isNaN(val) ? null : val;
             };
 
             // Strategy 1: Explicit Labels (Priority)
-            // Supports: Oxygen: 21.0, Ossigeno: 21.0, O2: 21.0, 02 21.0 (OCR error), O 2 21.0
-            const o2Match = text.match(/(?:Oxygen|Ossigeno|Oxy|O2|02|O\s?2)[\s:.]*(\d{1,3}[.,]?\d*)/i);
-            const o2Val = extractNum(o2Match);
-            if (o2Val !== null) {
-                result.o2 = o2Val;
-                result.found = true;
-            }
-
-            // Supports: Helium: 0.3, Elio: 0.3, He: 0.3, H e 0.3
-            const heMatch = text.match(/(?:Helium|Elio|He|H\s?e)[\s:.]*(\d{1,3}[.,]?\d*)/i);
-            const heVal = extractNum(heMatch);
-            if (heVal !== null) {
-                result.he = heVal;
-                result.found = true;
-            }
-
-            // Supports: Temperature: 13.8, Temp: 13.8, etc.
-            const tempMatch = text.match(/(?:Temperature|Temperatura|Temp)[\s:.]*(\d{1,3}[.,]?\d*)/i);
-            const tempVal = extractNum(tempMatch);
-            if (tempVal !== null) {
-                result.temp = tempVal;
-                result.found = true;
-            }
-
-            // Strategy 2: TMX format "21/35" (Backup if no O2/He found via labels)
-            if (result.o2 === null && result.he === null) {
-                const tmxMatch = text.match(/(\d{2}[.,]?\d?)\s*[\/|\\]\s*(\d{1,2}[.,]?\d?)/);
-                if (tmxMatch) {
-                    result.o2 = parseFloat(tmxMatch[1].replace(',', '.'));
-                    result.he = parseFloat(tmxMatch[2].replace(',', '.'));
+            // O2/02 followed by number
+            const o2Match = clean.match(/(?:Oxygen|Ossigeno|Oxy|O2|02|O\s?2|0z|Oz)[\s:.]*(\d{1,3}\.?\d*)/i);
+            if (o2Match) {
+                const val = parseNum(o2Match[1]);
+                if (val !== null && val >= 0 && val <= 100) {
+                    result.o2 = val;
                     result.found = true;
                 }
             }
 
+            // He followed by number
+            const heMatch = clean.match(/(?:Helium|Elio|He|H\s?e|he)[\s:.]*(\d{1,3}\.?\d*)/i);
+            if (heMatch) {
+                const val = parseNum(heMatch[1]);
+                if (val !== null && val >= 0 && val <= 100) {
+                    result.he = val;
+                    result.found = true;
+                }
+            }
+
+            // Temperature
+            const tempMatch = clean.match(/(?:Temperature|Temperatura|Temp|°C)[\s:.]*(\d{1,3}\.?\d*)/i);
+            if (tempMatch) {
+                const val = parseNum(tempMatch[1]);
+                if (val !== null) {
+                    result.temp = val;
+                    result.found = true;
+                }
+            }
+
+            // Strategy 2: TMX format "21/35" or "21.0/0.5"
+            if (result.o2 === null && result.he === null) {
+                const tmxMatch = clean.match(/(\d{1,3}\.?\d?)\s*[\/\\]\s*(\d{1,3}\.?\d?)/);
+                if (tmxMatch) {
+                    result.o2 = parseNum(tmxMatch[1]);
+                    result.he = parseNum(tmxMatch[2]);
+                    result.found = true;
+                }
+            }
+
+            // Strategy 3: Find two decimal numbers in sequence (common analyzer format)
+            // Look for patterns like "21.1" and "0.7" on separate lines or with spacing
+            if (result.o2 === null && result.he === null) {
+                // Find all decimal numbers in the text
+                const allNumbers = clean.match(/\d{1,3}\.\d/g);
+                console.log("Found decimal numbers:", allNumbers);
+
+                if (allNumbers && allNumbers.length >= 2) {
+                    // First number is likely O2 (usually 18-100%), second is He (usually 0-50%)
+                    const num1 = parseNum(allNumbers[0]);
+                    const num2 = parseNum(allNumbers[1]);
+
+                    // Heuristic: O2 is usually between 18-100, He is usually 0-50
+                    if (num1 >= 15 && num1 <= 100) {
+                        result.o2 = num1;
+                        result.found = true;
+                    }
+                    if (num2 !== null && num2 >= 0 && num2 <= 60) {
+                        result.he = num2;
+                        result.found = true;
+                    }
+                }
+            }
+
+            // Strategy 4: Line-by-line analysis for numbers
+            if (result.o2 === null && result.he === null) {
+                const lines = clean.split(/[\n\r]+/);
+                const numbersFound = [];
+
+                for (const line of lines) {
+                    // Find any number pattern in each line
+                    const numMatch = line.match(/(\d{1,3}[.,]?\d*)/);
+                    if (numMatch) {
+                        const val = parseNum(numMatch[1]);
+                        if (val !== null && val > 0) {
+                            numbersFound.push(val);
+                        }
+                    }
+                }
+
+                console.log("Numbers found per line:", numbersFound);
+
+                // If we found at least 2 numbers, use first two
+                if (numbersFound.length >= 2) {
+                    // Sort to identify: larger one is likely O2, smaller is He
+                    const sorted = [...numbersFound].sort((a, b) => b - a);
+                    if (sorted[0] >= 15 && sorted[0] <= 100) {
+                        result.o2 = sorted[0];
+                        result.found = true;
+                    }
+                    if (sorted[1] >= 0 && sorted[1] <= 60) {
+                        result.he = sorted[1];
+                        result.found = true;
+                    }
+                }
+            }
+
+            // Strategy 5: Last resort - find ANY two numbers
+            if (result.o2 === null && result.he === null) {
+                const anyNumbers = clean.match(/\d+\.?\d*/g);
+                console.log("Any numbers found:", anyNumbers);
+
+                if (anyNumbers && anyNumbers.length >= 2) {
+                    // Filter reasonable values
+                    const reasonable = anyNumbers
+                        .map(n => parseNum(n))
+                        .filter(n => n !== null && n > 0 && n < 100);
+
+                    if (reasonable.length >= 2) {
+                        // Assume larger is O2, smaller is He
+                        reasonable.sort((a, b) => b - a);
+                        result.o2 = reasonable[0];
+                        result.he = reasonable[1];
+                        result.found = true;
+                    }
+                }
+            }
+
+            console.log("Parse result:", result);
             return result;
         }
 
