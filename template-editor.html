@@ -34,10 +34,11 @@
             gap: 20px;
         }
 
-        .editor-panel {
+        .editor-panel,
+        .sidebar-section {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
-            padding: 20px;
+            padding: 15px;
         }
 
         .sidebar {
@@ -46,19 +47,12 @@
             gap: 15px;
         }
 
-        .sidebar-section {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 15px;
-        }
-
         .sidebar-section h3 {
             margin-bottom: 10px;
             color: #60a5fa;
             font-size: 0.9rem;
         }
 
-        /* Grid Editor */
         .grid-container {
             display: flex;
             justify-content: center;
@@ -104,7 +98,6 @@
             background: #fbbf24;
         }
 
-        /* Controls */
         .brush-selector {
             display: flex;
             gap: 10px;
@@ -148,7 +141,6 @@
             color: #000;
         }
 
-        /* Digit Selector */
         .digit-selector {
             display: flex;
             gap: 8px;
@@ -165,7 +157,6 @@
             color: #fff;
             font-size: 1.2rem;
             cursor: pointer;
-            transition: all 0.2s;
         }
 
         .digit-btn:hover {
@@ -177,13 +168,13 @@
             border-color: #60a5fa;
         }
 
-        /* Variants */
         .variants-list {
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 5px;
+            margin-top: 10px;
         }
 
         .variant-item {
@@ -200,22 +191,12 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
-        .variant-item.active {
-            background: rgba(59, 130, 246, 0.3);
-        }
-
         .variant-preview {
             width: 28px;
             height: 48px;
             display: grid;
             grid-template-columns: repeat(14, 2px);
             grid-template-rows: repeat(24, 2px);
-            gap: 0;
-        }
-
-        .variant-preview .mini-cell {
-            width: 2px;
-            height: 2px;
         }
 
         .variant-name {
@@ -233,7 +214,6 @@
             cursor: pointer;
         }
 
-        /* Buttons */
         .btn {
             padding: 10px 15px;
             border: none;
@@ -241,7 +221,6 @@
             cursor: pointer;
             font-size: 0.9rem;
             font-weight: 600;
-            transition: all 0.2s;
             width: 100%;
             margin-bottom: 8px;
         }
@@ -271,7 +250,6 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
-        /* Export Modal */
         .modal {
             display: none;
             position: fixed;
@@ -311,7 +289,7 @@
             border: 1px solid #334155;
             border-radius: 8px;
             padding: 10px;
-            font-family: 'Consolas', monospace;
+            font-family: monospace;
             font-size: 0.8rem;
         }
 
@@ -321,7 +299,6 @@
             margin-top: 15px;
         }
 
-        /* Info */
         .info-box {
             background: rgba(59, 130, 246, 0.2);
             border-left: 4px solid #3b82f6;
@@ -329,6 +306,16 @@
             border-radius: 4px;
             font-size: 0.8rem;
             margin-bottom: 15px;
+        }
+
+        .tools {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .tools .btn {
+            width: auto;
         }
 
         @media (max-width: 768px) {
@@ -341,32 +328,27 @@
 
 <body>
     <h1>🔢 Editor Template Cifre</h1>
-
     <div class="container">
         <div class="editor-panel">
             <div class="info-box">
                 📝 <strong>Come usare:</strong> Seleziona un pennello (0, 1, 7, 8) e clicca/trascina sulla griglia.
                 Salva più varianti per ogni cifra per migliorare il riconoscimento.
             </div>
-
             <div class="brush-selector">
                 <button class="brush-btn b0" data-value="0" title="Nero (sfondo)">0</button>
                 <button class="brush-btn b1" data-value="1" title="Alone tenue">1</button>
                 <button class="brush-btn b7 active" data-value="7" title="Giallo smorzato">7</button>
                 <button class="brush-btn b8" data-value="8" title="Giallo pieno">8</button>
             </div>
-
             <div class="grid-container">
                 <div class="grid" id="grid"></div>
             </div>
-
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn btn-warning" onclick="clearGrid()" style="width: auto;">🗑️ Pulisci</button>
-                <button class="btn btn-primary" onclick="flipHorizontal()" style="width: auto;">↔️ Specchia H</button>
-                <button class="btn btn-primary" onclick="flipVertical()" style="width: auto;">↕️ Specchia V</button>
+            <div class="tools">
+                <button class="btn btn-warning" onclick="clearGrid()">🗑️ Pulisci</button>
+                <button class="btn btn-primary" onclick="flipHorizontal()">↔️ Specchia H</button>
+                <button class="btn btn-primary" onclick="flipVertical()">↕️ Specchia V</button>
             </div>
         </div>
-
         <div class="sidebar">
             <div class="sidebar-section">
                 <h3>📌 Cifra Corrente</h3>
@@ -384,60 +366,45 @@
                     <button class="digit-btn" data-digit=".">.</button>
                 </div>
             </div>
-
             <div class="sidebar-section">
                 <h3>💾 Varianti Salvate</h3>
                 <button class="btn btn-success" onclick="saveVariant()">+ Salva come Variante</button>
                 <div class="variants-list" id="variantsList"></div>
             </div>
-
             <div class="sidebar-section">
                 <h3>📤 Esporta</h3>
                 <button class="btn btn-primary" onclick="exportTemplates()">Esporta JavaScript</button>
                 <button class="btn btn-warning" onclick="exportJSON()">Esporta JSON</button>
             </div>
-
             <div class="sidebar-section">
                 <h3>📥 Importa</h3>
-                <button class="btn btn-primary" onclick="loadFromDigitTemplates()">Carica da digit-templates.js</button>
+                <button class="btn btn-primary" onclick="loadFromDigitTemplates()">🔄 Ricarica da file</button>
             </div>
         </div>
     </div>
-
-    <!-- Export Modal -->
     <div class="modal" id="exportModal">
         <div class="modal-content">
             <h2>📤 Codice Esportato</h2>
             <textarea id="exportCode" readonly></textarea>
             <div class="modal-actions">
-                <button class="btn btn-success" onclick="copyExport()" style="width: auto;">📋 Copia</button>
-                <button class="btn btn-primary" onclick="downloadExport()" style="width: auto;">⬇️ Scarica</button>
-                <button class="btn btn-danger" onclick="closeModal()" style="width: auto;">✖️ Chiudi</button>
+                <button class="btn btn-success" onclick="copyExport()">📋 Copia</button>
+                <button class="btn btn-primary" onclick="downloadExport()">⬇️ Scarica</button>
+                <button class="btn btn-danger" onclick="closeModal()">✖️ Chiudi</button>
             </div>
         </div>
     </div>
 
+    <!-- Load templates FIRST -->
+    <script src="digit-templates.js"></script>
     <script>
-        const GRID_W = 14;
-        const GRID_H = 24;
+        const GRID_W = 14, GRID_H = 24;
+        let currentBrush = 7, currentDigit = '0', isDrawing = false, grid = [];
+        let digitVariants = { '0': [], '1': [], '2': [], '3': [], '4': [], '5': [], '6': [], '7': [], '8': [], '9': [], '.': [] };
 
-        let currentBrush = 7;
-        let currentDigit = '0';
-        let isDrawing = false;
-        let grid = [];
-
-        // Store multiple variants per digit
-        let digitVariants = {
-            '0': [], '1': [], '2': [], '3': [], '4': [],
-            '5': [], '6': [], '7': [], '8': [], '9': [], '.': []
-        };
-
-        // Initialize grid
         function initGrid() {
             const gridEl = document.getElementById('grid');
             gridEl.innerHTML = '';
             grid = [];
-
             for (let y = 0; y < GRID_H; y++) {
                 const row = [];
                 for (let x = 0; x < GRID_W; x++) {
@@ -445,315 +412,162 @@
                     cell.className = 'cell v0';
                     cell.dataset.x = x;
                     cell.dataset.y = y;
-
-                    cell.addEventListener('mousedown', (e) => {
-                        isDrawing = true;
-                        paintCell(cell);
+                    cell.addEventListener('mousedown', e => { isDrawing = true; paintCell(cell); e.preventDefault(); });
+                    cell.addEventListener('mouseenter', () => { if (isDrawing) paintCell(cell); });
+                    cell.addEventListener('touchstart', e => { paintCell(cell); e.preventDefault(); });
+                    cell.addEventListener('touchmove', e => {
+                        const t = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+                        if (t && t.classList.contains('cell')) paintCell(t);
                         e.preventDefault();
                     });
-                    cell.addEventListener('mouseenter', () => {
-                        if (isDrawing) paintCell(cell);
-                    });
-                    cell.addEventListener('touchstart', (e) => {
-                        paintCell(cell);
-                        e.preventDefault();
-                    });
-                    cell.addEventListener('touchmove', (e) => {
-                        const touch = e.touches[0];
-                        const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                        if (target && target.classList.contains('cell')) {
-                            paintCell(target);
-                        }
-                        e.preventDefault();
-                    });
-
                     gridEl.appendChild(cell);
                     row.push(0);
                 }
                 grid.push(row);
             }
-
             document.addEventListener('mouseup', () => isDrawing = false);
         }
 
         function paintCell(cell) {
-            const x = parseInt(cell.dataset.x);
-            const y = parseInt(cell.dataset.y);
+            const x = +cell.dataset.x, y = +cell.dataset.y;
             grid[y][x] = currentBrush;
-            cell.className = `cell v${currentBrush}`;
+            cell.className = 'cell v' + currentBrush;
         }
 
         function clearGrid() {
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach((cell, i) => {
-                const x = i % GRID_W;
-                const y = Math.floor(i / GRID_W);
-                grid[y][x] = 0;
-                cell.className = 'cell v0';
+            document.querySelectorAll('.cell').forEach((c, i) => {
+                grid[Math.floor(i / GRID_W)][i % GRID_W] = 0;
+                c.className = 'cell v0';
             });
         }
 
         function loadGridFromArray(arr) {
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach((cell, i) => {
-                const x = i % GRID_W;
-                const y = Math.floor(i / GRID_W);
-                const val = arr[y][x];
-                grid[y][x] = val;
-                cell.className = `cell v${val}`;
+            document.querySelectorAll('.cell').forEach((c, i) => {
+                const v = arr[Math.floor(i / GRID_W)][i % GRID_W];
+                grid[Math.floor(i / GRID_W)][i % GRID_W] = v;
+                c.className = 'cell v' + v;
             });
         }
 
-        function flipHorizontal() {
-            for (let y = 0; y < GRID_H; y++) {
-                grid[y].reverse();
-            }
-            loadGridFromArray(grid);
-        }
+        function flipHorizontal() { grid.forEach(r => r.reverse()); loadGridFromArray(grid); }
+        function flipVertical() { grid.reverse(); loadGridFromArray(grid); }
 
-        function flipVertical() {
-            grid.reverse();
-            loadGridFromArray(grid);
-        }
-
-        // Brush selection
-        document.querySelectorAll('.brush-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentBrush = parseInt(btn.dataset.value);
+        document.querySelectorAll('.brush-btn').forEach(b => {
+            b.addEventListener('click', () => {
+                document.querySelectorAll('.brush-btn').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
+                currentBrush = +b.dataset.value;
             });
         });
 
-        // Digit selection
-        document.querySelectorAll('.digit-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.digit-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentDigit = btn.dataset.digit;
+        document.querySelectorAll('.digit-btn').forEach(b => {
+            b.addEventListener('click', () => {
+                document.querySelectorAll('.digit-btn').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
+                currentDigit = b.dataset.digit;
                 updateVariantsList();
-
-                // Load first variant if exists
-                if (digitVariants[currentDigit].length > 0) {
-                    loadGridFromArray(digitVariants[currentDigit][0].data);
-                } else {
-                    clearGrid();
-                }
+                if (digitVariants[currentDigit].length > 0) loadGridFromArray(digitVariants[currentDigit][0].data);
+                else clearGrid();
             });
         });
 
-        // Save variant
         function saveVariant() {
-            const name = prompt(`Nome per questa variante di "${currentDigit}":`, `Variante ${digitVariants[currentDigit].length + 1}`);
+            const name = prompt('Nome variante per "' + currentDigit + '":', 'Var' + (digitVariants[currentDigit].length + 1));
             if (!name) return;
-
-            const variantData = grid.map(row => [...row]);
-            digitVariants[currentDigit].push({
-                name: name,
-                data: variantData
-            });
-
+            digitVariants[currentDigit].push({ name, data: grid.map(r => [...r]) });
             updateVariantsList();
             saveToLocalStorage();
         }
 
         function updateVariantsList() {
             const list = document.getElementById('variantsList');
+            const vars = digitVariants[currentDigit];
+            if (!vars.length) { list.innerHTML = '<div style="color:#666;padding:10px">Nessuna variante</div>'; return; }
             list.innerHTML = '';
-
-            const variants = digitVariants[currentDigit];
-            if (variants.length === 0) {
-                list.innerHTML = '<div style="color: #666; font-size: 0.8rem; padding: 10px;">Nessuna variante salvata</div>';
-                return;
-            }
-
-            variants.forEach((variant, idx) => {
+            vars.forEach((v, i) => {
                 const item = document.createElement('div');
                 item.className = 'variant-item';
-
-                // Mini preview
-                const preview = document.createElement('div');
-                preview.className = 'variant-preview';
-                for (let y = 0; y < GRID_H; y++) {
-                    for (let x = 0; x < GRID_W; x++) {
-                        const mc = document.createElement('div');
-                        mc.className = 'mini-cell';
-                        const val = variant.data[y][x];
-                        if (val === 0) mc.style.background = '#0a0a0a';
-                        else if (val === 1) mc.style.background = '#3d3d00';
-                        else if (val === 7) mc.style.background = '#a89000';
-                        else mc.style.background = '#fbbf24';
-                        preview.appendChild(mc);
-                    }
+                const prev = document.createElement('div');
+                prev.className = 'variant-preview';
+                for (let y = 0; y < GRID_H; y++) for (let x = 0; x < GRID_W; x++) {
+                    const mc = document.createElement('div');
+                    const val = v.data[y][x];
+                    mc.style.background = val === 0 ? '#0a0a0a' : val === 1 ? '#3d3d00' : val === 7 ? '#a89000' : '#fbbf24';
+                    prev.appendChild(mc);
                 }
-
-                const name = document.createElement('span');
-                name.className = 'variant-name';
-                name.textContent = variant.name;
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'variant-delete';
-                deleteBtn.textContent = '×';
-                deleteBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    if (confirm('Eliminare questa variante?')) {
-                        digitVariants[currentDigit].splice(idx, 1);
-                        updateVariantsList();
-                        saveToLocalStorage();
-                    }
-                };
-
-                item.appendChild(preview);
-                item.appendChild(name);
-                item.appendChild(deleteBtn);
-
-                item.onclick = () => {
-                    loadGridFromArray(variant.data);
-                };
-
+                const nm = document.createElement('span');
+                nm.className = 'variant-name';
+                nm.textContent = v.name;
+                const del = document.createElement('button');
+                del.className = 'variant-delete';
+                del.textContent = '×';
+                del.onclick = e => { e.stopPropagation(); if (confirm('Eliminare?')) { vars.splice(i, 1); updateVariantsList(); saveToLocalStorage(); } };
+                item.appendChild(prev);
+                item.appendChild(nm);
+                item.appendChild(del);
+                item.onclick = () => loadGridFromArray(v.data);
                 list.appendChild(item);
             });
         }
 
-        // Export functions
         function exportTemplates() {
-            let code = `/**
- * Digit Templates for Divesoft Display Recognition
- * Generated by KikoGen Template Editor
- * Grid size: ${GRID_W} x ${GRID_H} pixels
- * Values: 0 = black, 1 = faint glow, 7 = dim yellow, 8 = bright yellow
- */
-
-const DIGIT_TEMPLATES = {
-    GRID_WIDTH: ${GRID_W},
-    GRID_HEIGHT: ${GRID_H},
-`;
-
-            for (const [digit, variants] of Object.entries(digitVariants)) {
-                if (variants.length === 0) continue;
-
-                const key = digit === '.' ? "'.'" : `'${digit}'`;
-
-                if (variants.length === 1) {
-                    code += `\n    // Template for digit "${digit}"\n`;
-                    code += `    ${key}: [\n`;
-                    variants[0].data.forEach(row => {
-                        code += `        [${row.join(',')}],\n`;
-                    });
-                    code += `    ],\n`;
-                } else {
-                    // Multiple variants - store as array
-                    code += `\n    // Templates for digit "${digit}" (${variants.length} variants)\n`;
-                    code += `    ${key}: [\n`;
-                    variants.forEach((v, idx) => {
-                        code += `        // ${v.name}\n`;
-                        code += `        [\n`;
-                        v.data.forEach(row => {
-                            code += `            [${row.join(',')}],\n`;
-                        });
-                        code += `        ],\n`;
-                    });
-                    code += `    ],\n`;
-                }
+            let c = '/**\n * Digit Templates - KikoGen\n * Grid: ' + GRID_W + 'x' + GRID_H + '\n */\n\nconst DIGIT_TEMPLATES = {\n    GRID_WIDTH: ' + GRID_W + ',\n    GRID_HEIGHT: ' + GRID_H + ',\n';
+            for (const [d, vs] of Object.entries(digitVariants)) {
+                if (!vs.length) continue;
+                c += '\n    \'' + d + '\': [\n';
+                vs.forEach(v => {
+                    c += '        { name: "' + v.name + '", data: [\n';
+                    v.data.forEach(r => c += '            [' + r.join(',') + '],\n');
+                    c += '        ]},\n';
+                });
+                c += '    ],\n';
             }
-
-            code += `};
-
-// Export for use in main app
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = DIGIT_TEMPLATES;
-}
-`;
-
-            document.getElementById('exportCode').value = code;
+            c += '};\n';
+            document.getElementById('exportCode').value = c;
             document.getElementById('exportModal').classList.add('active');
         }
 
         function exportJSON() {
-            const json = JSON.stringify(digitVariants, null, 2);
-            document.getElementById('exportCode').value = json;
+            document.getElementById('exportCode').value = JSON.stringify(digitVariants, null, 2);
             document.getElementById('exportModal').classList.add('active');
         }
 
-        function copyExport() {
-            const textarea = document.getElementById('exportCode');
-            textarea.select();
-            document.execCommand('copy');
-            alert('Copiato negli appunti!');
-        }
-
+        function copyExport() { document.getElementById('exportCode').select(); document.execCommand('copy'); alert('Copiato!'); }
         function downloadExport() {
-            const code = document.getElementById('exportCode').value;
-            const isJSON = code.startsWith('{');
-            const filename = isJSON ? 'digit-templates.json' : 'digit-templates.js';
-
-            const blob = new Blob([code], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
+            const c = document.getElementById('exportCode').value;
             const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
+            a.href = URL.createObjectURL(new Blob([c], { type: 'text/plain' }));
+            a.download = c.startsWith('{') ? 'templates.json' : 'digit-templates.js';
             a.click();
-            URL.revokeObjectURL(url);
         }
+        function closeModal() { document.getElementById('exportModal').classList.remove('active'); }
 
-        function closeModal() {
-            document.getElementById('exportModal').classList.remove('active');
-        }
-
-        // Load existing templates
         function loadFromDigitTemplates() {
-            // Try to load from the existing DIGIT_TEMPLATES if available
-            if (typeof DIGIT_TEMPLATES !== 'undefined') {
-                for (const [digit, template] of Object.entries(DIGIT_TEMPLATES)) {
-                    if (digit === 'GRID_WIDTH' || digit === 'GRID_HEIGHT') continue;
-
-                    // Check if it's an array of variants or single template
-                    if (Array.isArray(template[0][0])) {
-                        // Multiple variants
-                        digitVariants[digit] = template.map((t, i) => ({
-                            name: `Variante ${i + 1}`,
-                            data: t
-                        }));
-                    } else {
-                        // Single template
-                        digitVariants[digit] = [{
-                            name: 'Template originale',
-                            data: template
-                        }];
-                    }
-                }
-                updateVariantsList();
-                alert('Template caricati con successo!');
-            } else {
-                alert('DIGIT_TEMPLATES non trovato. Assicurati che digit-templates.js sia caricato.');
+            if (typeof DIGIT_TEMPLATES === 'undefined') { alert('File non trovato'); return; }
+            let cnt = 0;
+            for (const [d, vs] of Object.entries(DIGIT_TEMPLATES)) {
+                if (d === 'GRID_WIDTH' || d === 'GRID_HEIGHT' || !Array.isArray(vs)) continue;
+                digitVariants[d] = vs.map((v, i) => ({ name: v.name || ('Var' + (i + 1)), data: v.data }));
+                cnt += vs.length;
             }
+            updateVariantsList();
+            if (digitVariants[currentDigit].length > 0) loadGridFromArray(digitVariants[currentDigit][0].data);
+            alert('✅ Caricate ' + cnt + ' varianti!');
         }
 
-        // LocalStorage persistence
-        function saveToLocalStorage() {
-            localStorage.setItem('kikogen_digit_variants', JSON.stringify(digitVariants));
-        }
-
+        function saveToLocalStorage() { localStorage.setItem('kiko_vars', JSON.stringify(digitVariants)); }
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('kikogen_digit_variants');
-            if (saved) {
-                try {
-                    digitVariants = JSON.parse(saved);
-                    updateVariantsList();
-                } catch (e) {
-                    console.error('Error loading from localStorage:', e);
-                }
-            }
+            const s = localStorage.getItem('kiko_vars');
+            if (s) { try { digitVariants = JSON.parse(s); return true; } catch (e) { } }
+            return false;
         }
 
-        // Init
+        // INIT
         initGrid();
-        loadFromLocalStorage();
-        updateVariantsList();
+        if (!loadFromLocalStorage() && typeof DIGIT_TEMPLATES !== 'undefined') loadFromDigitTemplates();
+        else updateVariantsList();
+        if (digitVariants[currentDigit].length > 0) loadGridFromArray(digitVariants[currentDigit][0].data);
     </script>
-
-    <!-- Optional: Load existing templates -->
-    <script src="digit-templates.js"></script>
 </body>
 
 </html>
