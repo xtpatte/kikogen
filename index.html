@@ -701,6 +701,9 @@
                 <button class="btn btn-secondary" id="retryBtn" onclick="resetCamera()" style="display:none;">
                     <i class="fas fa-redo"></i> Riprova
                 </button>
+                <button class="btn btn-primary" id="confirmBtn" onclick="confirmOcrValues()" style="display:none;">
+                    <i class="fas fa-check"></i> Conferma Valori
+                </button>
             </div>
         </div>
     </div>
@@ -1011,9 +1014,26 @@
             OCR.loading.style.display = 'none';
             OCR.controls.capture.style.display = 'inline-flex';
             OCR.controls.retry.style.display = 'none';
+            document.getElementById('confirmBtn').style.display = 'none';
             OCR.status.textContent = "Inquadra i valori...";
-            // Hide debug panel
+            OCR.status.style.color = "var(--color-primary)";
+            // Hide debug panel and clear pending
             document.getElementById('ocrDebugPanel').style.display = 'none';
+            OCR.pendingValues = null;
+        }
+
+        function confirmOcrValues() {
+            if (!OCR.pendingValues) return;
+
+            const values = OCR.pendingValues;
+
+            if (values.o2 !== null) DOM.inputs.o2Input.value = values.o2;
+            if (values.he !== null) DOM.inputs.heInput.value = values.he;
+            if (values.temp !== null) DOM.inputs.temperatureInput.value = values.temp;
+
+            updatePreview();
+            saveSettings();
+            closeOcrModal();
         }
 
         // Image preprocessing for better OCR on segment displays
@@ -1139,18 +1159,17 @@
                     if (bestResult.o2 !== null) statusMsg += `O₂ ${bestResult.o2}% `;
                     if (bestResult.he !== null) statusMsg += `He ${bestResult.he}% `;
                     if (bestResult.temp !== null) statusMsg += `${bestResult.temp}°C`;
+                    statusMsg += "\n⚠️ Verifica i valori prima di confermare!";
 
                     OCR.status.innerText = statusMsg;
                     OCR.status.style.color = "var(--color-success)";
 
-                    if (bestResult.o2 !== null) DOM.inputs.o2Input.value = bestResult.o2;
-                    if (bestResult.he !== null) DOM.inputs.heInput.value = bestResult.he;
-                    if (bestResult.temp !== null) DOM.inputs.temperatureInput.value = bestResult.temp;
+                    // Store pending values - don't apply yet
+                    OCR.pendingValues = bestResult;
 
-                    updatePreview();
-                    saveSettings();
-
-                    setTimeout(() => closeOcrModal(), 3000);
+                    // Show confirm and retry buttons
+                    OCR.controls.retry.style.display = 'inline-flex';
+                    document.getElementById('confirmBtn').style.display = 'inline-flex';
                 } else {
                     throw new Error("Nessun valore leggibile trovato");
                 }
