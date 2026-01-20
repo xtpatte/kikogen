@@ -522,7 +522,7 @@
                 });
                 c += '    ],\n';
             }
-            c += '};\n';
+            c += '};\n\n// Export for use in main app\nif (typeof module !== \'undefined\' && module.exports) {\n    module.exports = DIGIT_TEMPLATES;\n}\n';
             document.getElementById('exportCode').value = c;
             document.getElementById('exportModal').classList.add('active');
         }
