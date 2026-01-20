@@ -667,7 +667,7 @@
     </main>
 
     <footer>
-        <p style="font-weight: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">2026 KikoGen - Version 3.3</p>
+        <p style="font-weight: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">2026 KikoGen - Version 3.4</p>
     </footer>
 
     <!-- Smart Scanner Modal -->
@@ -1305,30 +1305,34 @@
                 grid.push(row);
             }
 
-            // Match against templates using weighted distance
+            // Match against ALL variants of ALL templates
             let bestDigit = '?';
             let bestScore = Infinity;
 
-            for (const [digit, template] of Object.entries(DIGIT_TEMPLATES)) {
+            for (const [digit, variants] of Object.entries(DIGIT_TEMPLATES)) {
                 // Skip non-digit keys
                 if (digit === 'GRID_WIDTH' || digit === 'GRID_HEIGHT') continue;
+                if (!Array.isArray(variants)) continue;
 
-                let totalDistance = 0;
-                for (let y = 0; y < GRID_H; y++) {
-                    for (let x = 0; x < GRID_W; x++) {
-                        const gridVal = grid[y][x];
-                        const templateVal = template[y][x];
+                // Check each variant for this digit
+                for (const variant of variants) {
+                    const template = variant.data;
+                    let totalDistance = 0;
 
-                        // Weighted distance: bigger penalty for bright vs dark mismatches
-                        const diff = Math.abs(gridVal - templateVal);
-                        totalDistance += diff;
+                    for (let y = 0; y < GRID_H; y++) {
+                        for (let x = 0; x < GRID_W; x++) {
+                            const gridVal = grid[y][x];
+                            const templateVal = template[y][x];
+                            const diff = Math.abs(gridVal - templateVal);
+                            totalDistance += diff;
+                        }
                     }
-                }
 
-                // Lower distance = better match
-                if (totalDistance < bestScore) {
-                    bestScore = totalDistance;
-                    bestDigit = digit;
+                    // Lower distance = better match
+                    if (totalDistance < bestScore) {
+                        bestScore = totalDistance;
+                        bestDigit = digit;
+                    }
                 }
             }
 
