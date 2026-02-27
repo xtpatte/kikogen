@@ -12,11 +12,15 @@ Segui questi passaggi per mettere online la tua app KikoGen in modo sicuro (HTTP
 
 ## 2. Carica i File
 1. Nella pagina della tua nuova repository, clicca sul pulsante **Add file** > **Upload files**.
-2. Trascina i seguenti file dalla tua cartella `Antigravity` dentro l'area grigia del browser:
+2. Trascina i seguenti file dalla tua cartella `kikogen` dentro l'area grigia del browser (assicurati di selezionarli tutti):
    - `index.html`
+   - `styles.css`
+   - `ocr-engine.js`
+   - `export-utils.js`
+   - `digit-templates.js`
    - `kikogen_banner.png`
 3. Aspetta che il caricamento finisca.
-4. In basso, nel box "Commit changes", puoi scrivere "Caricamento iniziale" e cliccare sul pulsante verde **Commit changes**.
+4. In basso, nel box "Commit changes", scrivi "Aggiornamento v4.0 KikoGen" e clicca sul pulsante verde **Commit changes**.
 
 ## 3. Attiva GitHub Pages
 1. Nella tua repository, clicca sulla scheda **Settings** (l'ultima a destra, icona ingranaggio).

@@ -1,1535 +1,647 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <title>KikoGen - Generatore Etichette Bombole</title>
-    <meta name="description"
-        content="Generatore professionale di etichette per miscele subacquee (Nitrox/Trimix). Calcolo MOD automatico e supporto OCR.">
+    <meta
+      name="description"
+      content="Generatore professionale di etichette per miscele subacquee (Nitrox/Trimix). Calcolo MOD automatico e supporto OCR."
+    />
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
     <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        :root {
-            /* Palette - Oceanic Premium */
-            --color-primary: #0284c7;
-            /* Sky 600 */
-            --color-primary-dark: #075985;
-            /* Sky 800 */
-            --color-accent: #38bdf8;
-            /* Sky 400 */
-            --color-bg: #f8fafc;
-            /* Slate 50 */
-            --color-surface: #ffffff;
-            --color-text-main: #0f172a;
-            /* Slate 900 */
-            --color-text-muted: #64748b;
-            /* Slate 500 */
-            --color-border: #e2e8f0;
-            /* Slate 200 */
-            --color-danger: #ef4444;
-            --color-success: #10b981;
-
-            /* Spacing & Layout */
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 20px;
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --font-family: 'Inter', sans-serif;
-
-            /* Input styling specifics */
-            --input-bg: #f8fafc;
-        }
-
-        /* --- Reset & Base --- */
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: var(--font-family);
-            background-color: var(--color-bg);
-            color: var(--color-text-main);
-            line-height: 1.6;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* --- Layout --- */
-        header {
-            width: 100%;
-            height: 280px;
-            background: var(--color-text-main);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .banner-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center;
-            opacity: 0.8;
-            transition: transform 0.5s ease;
-        }
-
-        /* Overlay gradient for text readability if needed, though card overlaps */
-        header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 120px;
-            background: linear-gradient(to top, var(--color-bg) 0%, transparent 100%);
-        }
-
-        .main-container {
-            width: 100%;
-            max-width: 800px;
-            margin: -80px auto 40px;
-            /* Overlap effect */
-            padding: 0 20px;
-            z-index: 10;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            /* Vertical layout: Inputs, Label, Download */
-            gap: 30px;
-            align-items: stretch;
-        }
-
-        /* --- Headings --- */
-        .page-title {
-            position: absolute;
-            top: -160px;
-            /* Position inside header visually */
-            left: 20px;
-            right: 20px;
-            text-align: center;
-            color: white;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-        }
-
-        .page-title h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            margin-bottom: 0.5rem;
-        }
-
-        .page-title p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            font-weight: 300;
-        }
-
-        /* --- Cards --- */
-        .card {
-            background: var(--color-surface);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-lg);
-            padding: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-            /* Subtle glass effect mostly solid */
-        }
-
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 24px;
-            color: var(--color-text-main);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .section-title i {
-            color: var(--color-primary);
-        }
-
-        /* --- Forms & Inputs --- */
-        .input-grid {
-            display: grid;
-            gap: 20px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            position: relative;
-        }
-
-        .form-group label {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--color-text-muted);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .form-group label i {
-            color: var(--color-primary);
-            font-size: 0.9em;
-        }
-
-        .input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        input[type="text"],
-        input[type="number"] {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--color-border);
-            background: var(--input-bg);
-            color: var(--color-text-main);
-            font-size: 1rem;
-            font-family: inherit;
-            transition: all 0.2s ease;
-            outline: none;
-        }
-
-        input[type="text"]:focus,
-        input[type="number"]:focus {
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.1);
-            background: var(--color-surface);
-        }
-
-        /* Suffix units inside input */
-        .input-suffix {
-            position: absolute;
-            right: 16px;
-            color: var(--color-text-muted);
-            font-size: 0.9rem;
-            pointer-events: none;
-        }
-
-        /* Dual input for dimensions */
-        .dual-input {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .dual-input input {
-            text-align: center;
-        }
-
-        .dual-input span {
-            color: var(--color-text-muted);
-            font-weight: 500;
-        }
-
-        /* --- Buttons --- */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 24px;
-            border-radius: var(--radius-md);
-            border: none;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            text-decoration: none;
-        }
-
-        .btn-primary {
-            background: var(--color-primary);
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.3);
-        }
-
-        .btn-primary:hover {
-            background: var(--color-primary-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 8px -1px rgba(2, 132, 199, 0.4);
-        }
-
-        .btn-secondary {
-            background: var(--color-surface);
-            color: var(--color-text-main);
-            border: 1px solid var(--color-border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--color-bg);
-            border-color: var(--color-text-muted);
-        }
-
-        .btn-accent {
-            background: #17a2b8;
-            /* Teal/Cyan match */
-            color: white;
-            width: 100%;
-        }
-
-        .btn-accent:hover {
-            background: #138496;
-        }
-
-        /* --- Preview Context --- */
-        .preview-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .preview-card {
-            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9IiNlMmU4ZjAiLz48L3N2Zz4=') var(--color-bg);
-            /* Subtle dot pattern */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 300px;
-            border: 2px dashed var(--color-border);
-            position: relative;
-        }
-
-        .preview-card.printing {
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-        }
-
-        /* --- Label Actual Styling (Print Target) --- */
-        .label-content {
-            background: white;
-            box-shadow: var(--shadow-md);
-            /* Dimensions set by JS */
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            transform-origin: center;
-            transition: width 0.3s, height 0.3s;
-        }
-
-        .label-header {
-            background: var(--color-danger);
-            color: white;
-            height: 25%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            line-height: 1;
-            /* Font size set by JS variable */
-            font-size: calc(var(--base-px-size) * 1.6);
-        }
-
-        .label-body {
-            flex: 1;
-            padding: 4% 8%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
-            color: black;
-            /* Explicit black for printing contrast */
-        }
-
-        /* Dynamic Typography helpers within Label */
-        .row-mix {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.4em;
-            font-size: calc(var(--base-px-size) * 1.25);
-        }
-
-        .box-value {
-            border: 2px solid black;
-            padding: 0.1em 0.4em;
-            border-radius: 4px;
-            font-weight: 700;
-        }
-
-        .text-label {
-            font-style: italic;
-            font-weight: 600;
-        }
-
-        .divider {
-            height: 2px;
-            background: black;
-            width: 100%;
-            margin: 2% 0;
-            border-radius: 1px;
-        }
-
-        .row-meta {
-            text-align: center;
-            font-size: var(--base-px-size);
-            display: flex;
-            justify-content: center;
-            gap: 1em;
-        }
-
-        .row-info {
-            font-size: var(--base-px-size);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .row-info span:first-child {
-            font-style: italic;
-        }
-
-        .row-info span:last-child {
-            font-weight: 700;
-        }
-
-
-        /* --- OCR Modal --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.8);
-            -webkit-backdrop-filter: blur(8px);
-            backdrop-filter: blur(8px);
-            z-index: 1000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-            opacity: 1;
-        }
-
-        .modal-box {
-            background: var(--color-surface);
-            padding: 24px;
-            border-radius: var(--radius-lg);
-            width: 100%;
-            max-width: 500px;
-            text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-
-        .camera-viewport {
-            width: 100%;
-            height: 300px;
-            background: #000;
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            position: relative;
-            margin: 20px 0;
-        }
-
-        #videoElement,
-        #captureCanvas {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .spinner {
-            width: 24px;
-            height: 24px;
-            border: 3px solid var(--color-border);
-            border-top-color: var(--color-primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            display: none;
-            margin: 10px auto;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* --- Footer --- */
-        footer {
-            margin-top: auto;
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--color-text-muted);
-            font-size: 0.9rem;
-        }
-
-        /* --- Responsive --- */
-        @media (max-width: 900px) {
-            header {
-                height: 220px;
-            }
-
-            .page-title {
-                top: -140px;
-            }
-
-            .page-title h1 {
-                font-size: 2rem;
-            }
-
-            .label-preview {
-                min-height: 250px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .card {
-                padding: 20px;
-            }
-
-            .modal-actions button {
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Stili: estratti in styles.css (refactoring v4.0) -->
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body>
     <header>
-        <img src="kikogen_banner.png" alt="Banner Subacquea" class="banner-img">
+      <img src="kikogen_banner.png" alt="Banner Subacquea" class="banner-img" />
     </header>
 
     <div class="page-title">
-        <h1>KikoGen</h1>
-        <p>Generatore Etichette Mix & Trimix</p>
+      <h1>KikoGen</h1>
+      <p>Generatore Etichette Mix & Trimix</p>
     </div>
 
     <main class="main-container">
+      <!-- SECTION: INPUTS -->
+      <section class="card input-section">
+        <h2 class="section-title">
+          <i class="fas fa-sliders-h"></i> Dati Miscela
+        </h2>
 
-        <!-- SECTION: INPUTS -->
-        <section class="card input-section">
-            <h2 class="section-title"><i class="fas fa-sliders-h"></i> Dati Miscela</h2>
-
-            <div class="input-grid">
-
-                <!-- O2 & He Row -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div class="form-group">
-                        <label for="o2Input"><i class="fas fa-lungs"></i> Ossigeno (O₂)</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="o2Input" value="20" min="0" max="100" step="0.1"
-                                inputmode="decimal">
-                            <span class="input-suffix">%</span>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="heInput"><i class="fas fa-wind"></i> Elio (He)</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="heInput" value="0.4" min="0" max="100" step="0.1"
-                                inputmode="decimal">
-                            <span class="input-suffix">%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Temperature -->
-                <div class="form-group">
-                    <label for="temperatureInput"><i class="fas fa-thermometer-half"></i> Temperatura</label>
-                    <div class="input-wrapper">
-                        <input type="number" id="temperatureInput" value="20" step="0.1" inputmode="decimal">
-                        <span class="input-suffix">°C</span>
-                    </div>
-                </div>
-
-                <!-- OCR Action -->
-                <button type="button" class="btn btn-accent" onclick="openOcrModal()">
-                    <i class="fas fa-camera"></i> Scan O₂/He da Analizzatore
-                </button>
-
-                <hr style="border: 0; border-top: 1px solid var(--color-border); margin: 10px 0;">
-
-                <h2 class="section-title" style="margin-bottom: 15px;"><i class="fas fa-id-card"></i> Dettagli & Formato
-                </h2>
-
-                <!-- Personnel -->
-                <div class="form-group">
-                    <label for="operatorName"><i class="fas fa-user-tie"></i> Analista / Operatore</label>
-                    <input type="text" id="operatorName" value="Federico Boni" placeholder="Chi ha analizzato?">
-                </div>
-
-                <div class="form-group">
-                    <label for="diverName"><i class="fas fa-user-circle"></i> Diver</label>
-                    <input type="text" id="diverName" value="Stefano Paterlini" placeholder="Chi userà la bombola?">
-                </div>
-
-                <!-- Dimensions -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div class="form-group">
-                        <label><i class="fas fa-ruler-combined"></i> Dimensioni (mm)</label>
-                        <div class="dual-input">
-                            <input type="number" id="labelWidth" value="50" min="30">
-                            <span>x</span>
-                            <input type="number" id="labelHeight" value="50" min="30">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="basePxSize"><i class="fas fa-font"></i> Dimensione Testo</label>
-                        <input type="number" id="basePxSize" value="16" min="8" max="50">
-                    </div>
-                </div>
-
+        <div class="input-grid">
+          <!-- O2 & He Row -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+            <div class="form-group">
+              <label for="o2Input"
+                ><i class="fas fa-lungs"></i> Ossigeno (O₂)</label
+              >
+              <div class="input-wrapper">
+                <input
+                  type="number"
+                  id="o2Input"
+                  value="20"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  inputmode="decimal"
+                />
+                <span class="input-suffix">%</span>
+              </div>
             </div>
-        </section>
+            <div class="form-group">
+              <label for="heInput"><i class="fas fa-wind"></i> Elio (He)</label>
+              <div class="input-wrapper">
+                <input
+                  type="number"
+                  id="heInput"
+                  value="0.4"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  inputmode="decimal"
+                />
+                <span class="input-suffix">%</span>
+              </div>
+            </div>
+          </div>
 
-        <!-- SECTION: PREVIEW -->
-        <div class="preview-wrapper">
-            <div class="card preview-card" id="labelPreviewContainer">
-                <!-- THE LABEL -->
-                <div class="label-content">
-                    <div class="label-header">
-                        <span id="modDisplay">MOD --m</span>
-                    </div>
-                    <div class="label-body">
-                        <!-- Gas Mix -->
-                        <div class="row-mix">
-                            <span class="text-label">O₂:</span>
-                            <span class="box-value" id="o2Display">--%</span>
-                            <span class="text-label">He:</span>
-                            <span class="box-value" id="heDisplay">--%</span>
-                        </div>
+          <!-- Temperature -->
+          <div class="form-group">
+            <label for="temperatureInput"
+              ><i class="fas fa-thermometer-half"></i> Temperatura</label
+            >
+            <div class="input-wrapper">
+              <input
+                type="number"
+                id="temperatureInput"
+                value="20"
+                step="0.1"
+                inputmode="decimal"
+              />
+              <span class="input-suffix">°C</span>
+            </div>
+          </div>
 
-                        <div class="divider"></div>
+          <!-- OCR Action -->
+          <button type="button" class="btn btn-accent" onclick="openOcrModal()">
+            <i class="fas fa-camera"></i> Scan O₂/He da Analizzatore
+          </button>
 
-                        <!-- Meta Data -->
-                        <div class="row-meta">
-                            <span id="dateTimeDisplay">--/--/--, --:--</span>
-                            <span id="temperatureDisplay">--°C</span>
-                        </div>
+          <hr
+            style="
+              border: 0;
+              border-top: 1px solid var(--color-border);
+              margin: 10px 0;
+            "
+          />
 
-                        <!-- People -->
-                        <div style="margin-top: 5px; display: flex; flex-direction: column; gap: 4px;">
-                            <div class="row-info">
-                                <span>Operatore:</span>
-                                <span id="operatorDisplay">--</span>
-                            </div>
-                            <div class="row-info">
-                                <span>Diver:</span>
-                                <span id="diverDisplay">--</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          <h2 class="section-title" style="margin-bottom: 15px">
+            <i class="fas fa-id-card"></i> Dettagli & Formato
+          </h2>
+
+          <!-- Personnel -->
+          <div class="form-group">
+            <label for="operatorName"
+              ><i class="fas fa-user-tie"></i> Analista / Operatore</label
+            >
+            <input
+              type="text"
+              id="operatorName"
+              value="Federico Boni"
+              placeholder="Chi ha analizzato?"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="diverName"
+              ><i class="fas fa-user-circle"></i> Diver</label
+            >
+            <input
+              type="text"
+              id="diverName"
+              value="Stefano Paterlini"
+              placeholder="Chi userà la bombola?"
+            />
+          </div>
+
+          <!-- Dimensions -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+            <div class="form-group">
+              <label
+                ><i class="fas fa-ruler-combined"></i> Dimensioni (mm)</label
+              >
+              <div class="dual-input">
+                <input type="number" id="labelWidth" value="50" min="30" />
+                <span>x</span>
+                <input type="number" id="labelHeight" value="50" min="30" />
+              </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="card" style="padding: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
-                <button class="btn btn-primary" style="flex: 1;" onclick="generatePdf()">
-                    <i class="fas fa-file-pdf"></i> PDF
-                </button>
-                <button class="btn btn-secondary" style="flex: 1;" onclick="generateImage()">
-                    <i class="fas fa-image"></i> Immagine
-                </button>
-                <button class="btn btn-accent" style="flex: 1;" onclick="shareViaBluetooth()" id="btButton">
-                    <i class="fab fa-bluetooth-b"></i> Bluetooth
-                </button>
+            <div class="form-group">
+              <label for="basePxSize"
+                ><i class="fas fa-font"></i> Dimensione Testo</label
+              >
+              <input
+                type="number"
+                id="basePxSize"
+                value="16"
+                min="8"
+                max="50"
+              />
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: PREVIEW -->
+      <div class="preview-wrapper">
+        <div class="card preview-card" id="labelPreviewContainer">
+          <!-- THE LABEL -->
+          <div class="label-content">
+            <div class="label-header">
+              <span id="modDisplay">MOD --m</span>
+            </div>
+            <div class="label-body">
+              <!-- Gas Mix -->
+              <div class="row-mix">
+                <span class="text-label">O₂:</span>
+                <span class="box-value" id="o2Display">--%</span>
+                <span class="text-label">He:</span>
+                <span class="box-value" id="heDisplay">--%</span>
+              </div>
+
+              <div class="divider"></div>
+
+              <!-- Meta Data -->
+              <div class="row-meta">
+                <span id="dateTimeDisplay">--/--/--, --:--</span>
+                <span id="temperatureDisplay">--°C</span>
+              </div>
+
+              <!-- People -->
+              <div
+                style="
+                  margin-top: 5px;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 4px;
+                "
+              >
+                <div class="row-info">
+                  <span>Operatore:</span>
+                  <span id="operatorDisplay">--</span>
+                </div>
+                <div class="row-info">
+                  <span>Diver:</span>
+                  <span id="diverDisplay">--</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
+        <!-- Action Buttons -->
+        <div
+          class="card"
+          style="padding: 20px; display: flex; gap: 10px; flex-wrap: wrap"
+        >
+          <button
+            class="btn btn-primary"
+            style="flex: 1; min-width: 80px"
+            onclick="generatePdf()"
+          >
+            <i class="fas fa-file-pdf"></i> PDF
+          </button>
+          <button
+            class="btn btn-secondary"
+            style="flex: 1; min-width: 80px"
+            onclick="generateImage()"
+          >
+            <i class="fas fa-image"></i> Immagine
+          </button>
+          <button
+            class="btn"
+            style="flex: 1; min-width: 80px; background: #6d28d9; color: white"
+            onclick="printLabel()"
+          >
+            <i class="fas fa-print"></i> Stampa
+          </button>
+          <button
+            class="btn btn-accent"
+            style="flex: 1; min-width: 80px"
+            onclick="shareViaBluetooth()"
+            id="btButton"
+          >
+            <i class="fas fa-share-alt"></i> Condividi
+          </button>
+        </div>
+      </div>
     </main>
 
+    <!-- Area di stampa: wrapper invisibile nell'UI, usato solo al momento della stampa -->
+    <div id="print-area" style="display: none"></div>
+
     <footer>
-        <p style="font-weight: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">2026 KikoGen - Version 3.4</p>
+      <p style="font-weight: bold; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3)">
+        2026 KikoGen - Version 3.5
+      </p>
     </footer>
 
     <!-- Smart Scanner Modal -->
     <div id="ocrModal" class="modal-overlay">
-        <div class="modal-box" style="max-width: 420px;">
-            <h3 style="font-size: 1.2rem; margin-bottom: 10px;">📷 Scansione Divesoft</h3>
-            <p id="scanInstructions" style="color: var(--color-text-muted); font-size: 0.85rem;">Inquadra il display
-                dell'analizzatore</p>
+      <div class="modal-box" style="max-width: 440px">
+        <h3 style="font-size: 1.2rem; margin-bottom: 6px">
+          📷 Scansione Analizzatore
+        </h3>
+        <p
+          id="scanInstructions"
+          style="
+            color: var(--color-text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+          "
+        >
+          Inquadra il display dell'analizzatore e premi Scansiona
+        </p>
 
-            <div class="camera-viewport" style="position: relative; height: 220px; background: #000;">
-                <video id="videoElement" autoplay playsinline
-                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;"></video>
-                <canvas id="captureCanvas" style="display:none;"></canvas>
-                <!-- Processing overlay -->
-                <div id="processingOverlay"
-                    style="display:none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; border-radius: 8px;">
-                    <div style="color: #fff; text-align: center;">
-                        <div class="spinner"></div>
-                        <p style="margin-top: 10px;">Analisi in corso...</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Scan button -->
-            <div style="text-align: center; margin: 15px 0;">
-                <button id="scanBtn" class="btn btn-primary" onclick="scanDisplay()"
-                    style="padding: 12px 30px; font-size: 1rem;">
-                    <i class="fas fa-crosshairs"></i> Scansiona Display
-                </button>
-            </div>
-
-            <!-- Results display -->
-            <div id="scanResults"
-                style="display: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: center;">
-                <div style="font-size: 0.8rem; opacity: 0.9; margin-bottom: 5px;">✅ VALORI RILEVATI</div>
-                <div style="font-size: 1.5rem; font-weight: bold;">
-                    O₂: <span id="detectedO2">--</span>% &nbsp; He: <span id="detectedHe">--</span>%
-                </div>
-            </div>
-
-            <!-- Debug panel -->
-            <div id="debugPanel"
-                style="display: none; background: #1e293b; color: #94a3b8; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-family: monospace; font-size: 0.7rem; max-height: 80px; overflow-y: auto;">
-                <pre id="debugText" style="margin: 0;"></pre>
-            </div>
-
-            <!-- Manual input section (collapsible) -->
-            <details style="margin-bottom: 15px;">
-                <summary style="cursor: pointer; color: var(--color-text-muted); font-size: 0.85rem;">📝 Inserimento
-                    manuale</summary>
-                <div
-                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 8px;">
-                    <div style="text-align: center;">
-                        <label style="font-size: 0.8rem; color: var(--color-text-muted);">O₂ %</label>
-                        <input type="number" id="quickO2" value="21.0" step="0.1" min="0" max="100"
-                            style="width: 80px; text-align: center; font-size: 1.1rem; padding: 6px; border-radius: 6px; border: 1px solid var(--color-border);">
-                    </div>
-                    <div style="text-align: center;">
-                        <label style="font-size: 0.8rem; color: var(--color-text-muted);">He %</label>
-                        <input type="number" id="quickHe" value="0.0" step="0.1" min="0" max="100"
-                            style="width: 80px; text-align: center; font-size: 1.1rem; padding: 6px; border-radius: 6px; border: 1px solid var(--color-border);">
-                    </div>
-                </div>
-            </details>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeOcrModal()">Annulla</button>
-                <button id="confirmBtn" class="btn btn-primary" onclick="confirmScanValues()" style="display: none;">
-                    <i class="fas fa-check"></i> Usa Valori
-                </button>
-            </div>
+        <!-- Camera viewport -->
+        <div
+          class="camera-viewport"
+          style="position: relative; height: 220px; background: #000"
+        >
+          <video
+            id="videoElement"
+            autoplay
+            playsinline
+            style="
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              border-radius: 8px;
+            "
+          ></video>
+          <canvas id="captureCanvas" style="display: none"></canvas>
         </div>
+
+        <!-- Threshold slider -->
+        <div
+          style="
+            margin: 12px 0 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          "
+        >
+          <label
+            for="thresholdSlider"
+            style="
+              font-size: 0.8rem;
+              color: var(--color-text-muted);
+              white-space: nowrap;
+            "
+          >
+            💡 Soglia luce:
+          </label>
+          <input
+            type="range"
+            id="thresholdSlider"
+            min="30"
+            max="220"
+            value="110"
+            step="5"
+            style="flex: 1; accent-color: var(--color-primary)"
+            oninput="
+              document.getElementById('thresholdValue').textContent = this.value
+            "
+          />
+          <span
+            id="thresholdValue"
+            style="font-size: 0.8rem; font-weight: 600; min-width: 28px"
+            >110</span
+          >
+        </div>
+
+        <!-- Debug mask preview -->
+        <div id="maskPreviewWrap" style="display: none; margin-bottom: 10px">
+          <p
+            style="
+              font-size: 0.75rem;
+              color: var(--color-text-muted);
+              margin-bottom: 4px;
+            "
+          >
+            👁️ Ciò che il software vede (bianco = pixel rilevati):
+          </p>
+          <canvas
+            id="maskCanvas"
+            style="
+              width: 100%;
+              border-radius: 6px;
+              background: #000;
+              image-rendering: pixelated;
+            "
+          ></canvas>
+        </div>
+
+        <!-- Scan button -->
+        <div style="text-align: center; margin: 10px 0">
+          <button
+            id="scanBtn"
+            class="btn btn-primary"
+            onclick="scanDisplay()"
+            style="padding: 12px 30px; font-size: 1rem"
+          >
+            <i class="fas fa-crosshairs"></i> Scansiona Display
+          </button>
+        </div>
+
+        <!-- Results display -->
+        <div
+          id="scanResults"
+          style="
+            display: none;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            text-align: center;
+          "
+        >
+          <div style="font-size: 0.8rem; opacity: 0.9; margin-bottom: 5px">
+            ✅ VALORI RILEVATI
+          </div>
+          <div style="font-size: 1.5rem; font-weight: bold">
+            O₂: <span id="detectedO2">--</span>% &nbsp; He:
+            <span id="detectedHe">--</span>%
+          </div>
+          <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 4px">
+            Verifica i valori prima di confermare
+          </div>
+        </div>
+
+        <!-- Debug panel -->
+        <div
+          id="debugPanel"
+          style="
+            display: none;
+            background: #1e293b;
+            color: #94a3b8;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-family: monospace;
+            font-size: 0.7rem;
+            max-height: 90px;
+            overflow-y: auto;
+          "
+        >
+          <pre id="debugText" style="margin: 0; white-space: pre-wrap"></pre>
+        </div>
+
+        <!-- Manual input section (collapsible) -->
+        <details style="margin-bottom: 12px">
+          <summary
+            style="
+              cursor: pointer;
+              color: var(--color-text-muted);
+              font-size: 0.85rem;
+            "
+          >
+            📝 Inserimento manuale
+          </summary>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 15px;
+              margin-top: 10px;
+              padding: 10px;
+              background: rgba(0, 0, 0, 0.1);
+              border-radius: 8px;
+            "
+          >
+            <div style="text-align: center">
+              <label style="font-size: 0.8rem; color: var(--color-text-muted)"
+                >O₂ %</label
+              >
+              <input
+                type="number"
+                id="quickO2"
+                value="21.0"
+                step="0.1"
+                min="0"
+                max="100"
+                style="
+                  width: 80px;
+                  text-align: center;
+                  font-size: 1.1rem;
+                  padding: 6px;
+                  border-radius: 6px;
+                  border: 1px solid var(--color-border);
+                "
+              />
+            </div>
+            <div style="text-align: center">
+              <label style="font-size: 0.8rem; color: var(--color-text-muted)"
+                >He %</label
+              >
+              <input
+                type="number"
+                id="quickHe"
+                value="0.0"
+                step="0.1"
+                min="0"
+                max="100"
+                style="
+                  width: 80px;
+                  text-align: center;
+                  font-size: 1.1rem;
+                  padding: 6px;
+                  border-radius: 6px;
+                  border: 1px solid var(--color-border);
+                "
+              />
+            </div>
+          </div>
+        </details>
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeOcrModal()">
+            Annulla
+          </button>
+          <button
+            id="confirmBtn"
+            class="btn btn-primary"
+            onclick="confirmScanValues()"
+            style="display: none"
+          >
+            <i class="fas fa-check"></i> Usa Valori
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Libraries -->
+    <!-- Librerie CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Moduli KikoGen (refactoring v4.0) -->
     <script src="digit-templates.js"></script>
+    <script src="ocr-engine.js"></script>
+    <script src="export-utils.js"></script>
 
     <script>
-        // --- Configuration & State ---
-        const CONFIG = {
-            storageKeys: ['o2Input', 'heInput', 'temperatureInput', 'operatorName', 'diverName', 'labelWidth', 'labelHeight', 'basePxSize'],
-            defaults: {
-                o2Input: 20, heInput: 0.4, temperatureInput: 20,
-                operatorName: 'Federico Boni', diverName: 'Stefano Paterlini',
-                labelWidth: 50, labelHeight: 50, basePxSize: 16
-            }
-        };
-
-        const DOM = {
-            inputs: {},
-            displays: {},
-            labelContent: document.querySelector('.label-content'),
-            previewContainer: document.getElementById('labelPreviewContainer')
-        };
-
-        // Cache DOM elements
-        CONFIG.storageKeys.forEach(id => DOM.inputs[id] = document.getElementById(id));
-        ['modDisplay', 'o2Display', 'heDisplay', 'dateTimeDisplay', 'temperatureDisplay', 'operatorDisplay', 'diverDisplay'].forEach(id => {
-            DOM.displays[id] = document.getElementById(id);
-        });
-
-        // --- Logic: Core ---
-
-        function init() {
-            loadSettings();
-            setupEventListeners();
-            updatePreview();
-        }
-
-        function setupEventListeners() {
-            Object.values(DOM.inputs).forEach(input => {
-                input.addEventListener('input', () => {
-                    updatePreview();
-                    saveSettings();
-                });
-            });
-
-            // Update preview on window resize (e.g., phone rotation)
-            window.addEventListener('resize', () => {
-                updatePreview();
-            });
-        }
-
-        function calculateMOD(o2) {
-            if (o2 <= 0) return 0;
-            // Dalton's Law: MOD = ((PO2_max / fO2) - 1) * 10. Using 1.6 as max PO2.
-            const mod = ((1.6 / (o2 / 100)) - 1) * 10;
-            return Math.max(0, Math.round(mod));
-        }
-
-        function updatePreview() {
-            // Get values
-            const val = (id) => DOM.inputs[id].value;
-            const num = (id) => parseFloat(val(id)) || 0;
-
-            const o2 = num('o2Input');
-            const he = num('heInput');
-            const temp = num('temperatureInput');
-
-            // Calculate Logic
-            const mod = calculateMOD(o2);
-
-            // Update Text
-            DOM.displays.modDisplay.textContent = `MOD ${mod} m`;
-            DOM.displays.o2Display.textContent = `${o2.toFixed(1)}%`;
-            DOM.displays.heDisplay.textContent = `${he.toFixed(1)}%`;
-            DOM.displays.temperatureDisplay.textContent = `${temp.toFixed(1)}°C`;
-            DOM.displays.operatorDisplay.textContent = val('operatorName');
-            DOM.displays.diverDisplay.textContent = val('diverName');
-
-            // Date Time
-            const now = new Date();
-            DOM.displays.dateTimeDisplay.textContent = `${now.toLocaleDateString('it-IT')}, ${now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
-
-            // Styling Dimensions
-            const widthMm = num('labelWidth');
-            const heightMm = num('labelHeight');
-            const basePx = num('basePxSize');
-
-            // Responsive scaling: adapt to container width with a max of 150%
-            const baseScreenScale = 5; // Base scale (original size)
-            const maxScale = 1.5; // Maximum 150% of base size
-
-            // Get available container width (with some padding margin)
-            const containerWidth = DOM.previewContainer.clientWidth - 40; // 40px padding/margin
-
-            // Calculate target width at base scale
-            const baseWidth = widthMm * baseScreenScale;
-
-            // Calculate scale factor needed to fit container
-            const scaleFactor = Math.min(containerWidth / baseWidth, maxScale);
-
-            // Apply the calculated scale
-            const finalScreenScale = baseScreenScale * scaleFactor;
-            const finalContentScale = scaleFactor;
-
-            DOM.labelContent.style.width = `${widthMm * finalScreenScale}px`;
-            DOM.labelContent.style.height = `${heightMm * finalScreenScale}px`;
-            DOM.labelContent.style.setProperty('--base-px-size', `${basePx * finalContentScale}px`);
-        }
-
-        // --- Logic: Storage ---
-
-        function saveSettings() {
-            CONFIG.storageKeys.forEach(key => {
-                localStorage.setItem(key, DOM.inputs[key].value);
-            });
-        }
-
-        function loadSettings() {
-            CONFIG.storageKeys.forEach(key => {
-                const saved = localStorage.getItem(key);
-                if (saved !== null) DOM.inputs[key].value = saved;
-                else DOM.inputs[key].value = CONFIG.defaults[key];
-            });
-        }
-
-        // --- Logic: Export (PDF & IMG) ---
-
-        async function prepareCapture() {
-            DOM.previewContainer.classList.add('printing');
-            // Wait a tick for styles to apply if needed, though usually sync in JS cycle
-            await new Promise(r => setTimeout(r, 50));
-            return DOM.labelContent;
-        }
-
-        async function cleanupCapture() {
-            DOM.previewContainer.classList.remove('printing');
-        }
-
-        async function generatePdf() {
-            const element = await prepareCapture();
-
-            try {
-                const canvas = await html2canvas(element, { scale: 4, useCORS: true, backgroundColor: '#ffffff' });
-                const imgData = canvas.toDataURL('image/png');
-
-                const { jsPDF } = window.jspdf;
-                const widthMm = parseFloat(DOM.inputs.labelWidth.value);
-                const heightMm = parseFloat(DOM.inputs.labelHeight.value); // Fix: use height input
-
-                const doc = new jsPDF({
-                    orientation: widthMm > heightMm ? 'l' : 'p',
-                    unit: 'mm',
-                    format: [widthMm + 10, heightMm + 10] // Custom page size slightly larger than label
-                });
-
-                doc.addImage(imgData, 'PNG', 5, 5, widthMm, heightMm);
-                doc.save(`KikoGen_Label_${Date.now()}.pdf`);
-
-            } catch (e) {
-                console.error(e);
-                alert('Errore generazione PDF');
-            } finally {
-                cleanupCapture();
-            }
-        }
-
-        async function generateImage() {
-            const element = await prepareCapture();
-            try {
-                const canvas = await html2canvas(element, { scale: 4, backgroundColor: null });
-                const link = document.createElement('a');
-                link.download = `KikoGen_Label_${Date.now()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            } finally {
-                cleanupCapture();
-            }
-        }
-
-        async function shareViaBluetooth() {
-            // Check if Web Share API is supported
-            if (!navigator.share) {
-                alert('⚠️ La condivisione non è supportata su questo browser.\n\nUsa "Salva Immagine" e poi condividi manualmente il file.');
-                return;
-            }
-
-            const element = await prepareCapture();
-
-            try {
-                // Generate canvas with high quality for printing
-                const canvas = await html2canvas(element, { scale: 4, backgroundColor: '#ffffff' });
-
-                // Convert canvas to blob
-                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-
-                // Create file from blob
-                const fileName = `KikoGen_Label_${Date.now()}.png`;
-                const file = new File([blob], fileName, { type: 'image/png' });
-
-                // Check if files can be shared
-                if (navigator.canShare && !navigator.canShare({ files: [file] })) {
-                    alert('⚠️ Questo dispositivo non può condividere file.\n\nUsa "Salva Immagine" invece.');
-                    cleanupCapture();
-                    return;
-                }
-
-                // Share the file
-                await navigator.share({
-                    files: [file],
-                    title: 'Etichetta KikoGen',
-                    text: 'Etichetta bombola subacquea generata con KikoGen'
-                });
-
-                console.log('Label shared successfully via Bluetooth/Share');
-
-            } catch (error) {
-                // User cancelled or error occurred
-                if (error.name !== 'AbortError') {
-                    console.error('Share error:', error);
-                    alert('Errore durante la condivisione. Prova con "Salva Immagine".');
-                }
-            } finally {
-                cleanupCapture();
-            }
-        }
-
-        // --- Logic: Smart Digit Recognition for Divesoft Display ---
-
-        const OCR = {
-            stream: null,
-            video: document.getElementById('videoElement'),
-            canvas: document.getElementById('captureCanvas'),
-            modal: document.getElementById('ocrModal'),
-            detectedO2: null,
-            detectedHe: null
-        };
-
-        // 7-segment digit patterns (which segments are ON for each digit)
-        // Segment layout:  0
-        //                 1 2
-        //                  3
-        //                 4 5
-        //                  6
-        const DIGIT_PATTERNS = {
-            '0': [1, 1, 1, 0, 1, 1, 1],
-            '1': [0, 0, 1, 0, 0, 1, 0],
-            '2': [1, 0, 1, 1, 1, 0, 1],
-            '3': [1, 0, 1, 1, 0, 1, 1],
-            '4': [0, 1, 1, 1, 0, 1, 0],
-            '5': [1, 1, 0, 1, 0, 1, 1],
-            '6': [1, 1, 0, 1, 1, 1, 1],
-            '7': [1, 0, 1, 0, 0, 1, 0],
-            '8': [1, 1, 1, 1, 1, 1, 1],
-            '9': [1, 1, 1, 1, 0, 1, 1]
-        };
-
-        async function openOcrModal() {
-            const isSecure = window.location.protocol === 'https:' ||
-                window.location.hostname === 'localhost' ||
-                window.location.hostname === '127.0.0.1';
-
-            if (!isSecure) {
-                alert("⚠️ La fotocamera richiede HTTPS.\n\nUsa GitHub Pages o altro hosting sicuro.");
-                return;
-            }
-
-            OCR.modal.classList.add('active');
-            OCR.detectedO2 = null;
-            OCR.detectedHe = null;
-
-            // Reset UI
-            document.getElementById('scanResults').style.display = 'none';
-            document.getElementById('confirmBtn').style.display = 'none';
-            document.getElementById('debugPanel').style.display = 'none';
-            document.getElementById('scanBtn').disabled = false;
-            document.getElementById('scanInstructions').textContent = "Inquadra il display dell'analizzatore";
-
-            // Pre-fill manual inputs
-            document.getElementById('quickO2').value = DOM.inputs.o2Input.value || 21.0;
-            document.getElementById('quickHe').value = DOM.inputs.heInput.value || 0.0;
-
-            try {
-                const constraints = {
-                    video: {
-                        facingMode: 'environment',
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    }
-                };
-
-                OCR.stream = await navigator.mediaDevices.getUserMedia(constraints);
-                OCR.video.srcObject = OCR.stream;
-                OCR.video.play().catch(e => console.log("Play error:", e));
-
-            } catch (err) {
-                console.error("Camera Error:", err);
-                document.getElementById('scanInstructions').textContent = "Camera non disponibile - usa input manuale";
-            }
-        }
-
-        function closeOcrModal() {
-            if (OCR.stream) {
-                OCR.stream.getTracks().forEach(track => track.stop());
-                OCR.video.srcObject = null;
-            }
-            OCR.modal.classList.remove('active');
-        }
-
-        async function scanDisplay() {
-            const scanBtn = document.getElementById('scanBtn');
-            const debugPanel = document.getElementById('debugPanel');
-            const debugText = document.getElementById('debugText');
-
-            scanBtn.disabled = true;
-            scanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analisi...';
-            debugPanel.style.display = 'block';
-            debugText.textContent = 'Cattura immagine...';
-
-            try {
-                // Capture frame
-                OCR.canvas.width = OCR.video.videoWidth;
-                OCR.canvas.height = OCR.video.videoHeight;
-                const ctx = OCR.canvas.getContext('2d');
-                ctx.drawImage(OCR.video, 0, 0);
-
-                debugText.textContent = `Immagine: ${OCR.canvas.width}x${OCR.canvas.height}\nEstrazione pixel gialli...`;
-
-                // Extract yellow pixels (Divesoft display color)
-                const imageData = ctx.getImageData(0, 0, OCR.canvas.width, OCR.canvas.height);
-                const yellowMask = extractYellowPixels(imageData);
-
-                debugText.textContent += `\nPixel gialli trovati: ${yellowMask.count}`;
-
-                // Find digit regions by analyzing rows
-                const result = recognizeDigits(yellowMask, OCR.canvas.width, OCR.canvas.height);
-
-                debugText.textContent += `\nRighe trovate: ${result.rows}`;
-                debugText.textContent += `\nValori: O2=${result.o2 || '?'}, He=${result.he || '?'}`;
-
-                if (result.o2 !== null || result.he !== null) {
-                    OCR.detectedO2 = result.o2;
-                    OCR.detectedHe = result.he;
-
-                    document.getElementById('detectedO2').textContent = result.o2 !== null ? result.o2.toFixed(1) : '--';
-                    document.getElementById('detectedHe').textContent = result.he !== null ? result.he.toFixed(1) : '--';
-                    document.getElementById('scanResults').style.display = 'block';
-                    document.getElementById('confirmBtn').style.display = 'inline-flex';
-                    document.getElementById('scanInstructions').textContent = '✅ Valori rilevati! Verifica e conferma.';
-
-                    if (navigator.vibrate) navigator.vibrate(200);
-                } else {
-                    document.getElementById('scanInstructions').textContent = '❌ Non riesco a leggere. Riprova o usa input manuale.';
-                }
-
-            } catch (e) {
-                console.error('Scan error:', e);
-                debugText.textContent += `\nErrore: ${e.message}`;
-                document.getElementById('scanInstructions').textContent = '❌ Errore durante la scansione.';
-            } finally {
-                scanBtn.disabled = false;
-                scanBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Scansiona Display';
-            }
-        }
-
-        function extractYellowPixels(imageData) {
-            const data = imageData.data;
-            const width = imageData.width;
-            const height = imageData.height;
-            const mask = new Uint8Array(width * height);
-            let count = 0;
-
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-
-                // Detect yellow/amber pixels (Divesoft display)
-                // Yellow has high R, high G, low B
-                const isYellow = (r > 150 && g > 100 && b < 120 && r > b * 1.5);
-
-                // Also detect bright white-ish yellow
-                const isBright = (r > 200 && g > 180 && b < 150);
-
-                if (isYellow || isBright) {
-                    mask[i / 4] = 1;
-                    count++;
-                }
-            }
-
-            return { mask, count, width, height };
-        }
-
-        function recognizeDigits(yellowMask, width, height) {
-            const { mask } = yellowMask;
-
-            // Find horizontal bands with yellow pixels
-            const rowDensity = new Array(height).fill(0);
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    if (mask[y * width + x]) {
-                        rowDensity[y]++;
-                    }
-                }
-            }
-
-            // Find ALL bands first
-            const maxDensity = Math.max(...rowDensity);
-            const threshold = maxDensity * 0.15; // Lower threshold
-            const allBands = [];
-            let inBand = false;
-            let bandStart = 0;
-
-            for (let y = 0; y < height; y++) {
-                if (rowDensity[y] > threshold && !inBand) {
-                    inBand = true;
-                    bandStart = y;
-                } else if (rowDensity[y] <= threshold && inBand) {
-                    inBand = false;
-                    const bandHeight = y - bandStart;
-                    if (bandHeight > 20) { // Minimum band height for digits
-                        // Calculate total pixels in this band
-                        let totalPixels = 0;
-                        for (let by = bandStart; by < y; by++) {
-                            totalPixels += rowDensity[by];
-                        }
-                        allBands.push({ start: bandStart, end: y, pixels: totalPixels, height: bandHeight });
-                    }
-                }
-            }
-
-            // Sort by pixel count and take the TWO largest bands
-            allBands.sort((a, b) => b.pixels - a.pixels);
-            const bands = allBands.slice(0, 2);
-
-            // Sort by Y position (top = O2, bottom = He)
-            bands.sort((a, b) => a.start - b.start);
-
-            // Extract numbers from each band
-            let o2Value = null;
-            let heValue = null;
-
-            if (bands.length >= 1) {
-                o2Value = extractNumberFromBand(mask, width, bands[0]);
-            }
-            if (bands.length >= 2) {
-                heValue = extractNumberFromBand(mask, width, bands[1]);
-            }
-
-            return { o2: o2Value, he: heValue, rows: bands.length };
-        }
-
-        function extractNumberFromBand(mask, width, band) {
-            const { start, end } = band;
-            const bandHeight = end - start;
-
-            // Find vertical slices with pixels (these are digits)
-            const colDensity = new Array(width).fill(0);
-            for (let y = start; y < end; y++) {
-                for (let x = 0; x < width; x++) {
-                    if (mask[y * width + x]) {
-                        colDensity[x]++;
-                    }
-                }
-            }
-
-            // Find digit columns - need higher threshold
-            const maxColDensity = Math.max(...colDensity);
-            const threshold = maxColDensity * 0.1;
-            const digitRegions = [];
-            let inDigit = false;
-            let digitStart = 0;
-
-            for (let x = 0; x < width; x++) {
-                if (colDensity[x] > threshold && !inDigit) {
-                    inDigit = true;
-                    digitStart = x;
-                } else if (colDensity[x] <= threshold && inDigit) {
-                    inDigit = false;
-                    const digitWidth = x - digitStart;
-                    if (digitWidth > 3) { // Minimum digit width
-                        digitRegions.push({
-                            x1: digitStart,
-                            x2: x,
-                            y1: start,
-                            y2: end,
-                            width: digitWidth
-                        });
-                    }
-                }
-            }
-
-            // Process each digit region
-            let numberStr = '';
-            let prevEnd = 0;
-
-            for (const region of digitRegions) {
-                // Check if there's a gap (might be decimal point skipped)
-                const gap = region.x1 - prevEnd;
-
-                // Check if this region is a decimal point (much smaller than others)
-                const avgWidth = digitRegions.reduce((s, r) => s + r.width, 0) / digitRegions.length;
-                const isDecimal = region.width < avgWidth * 0.4;
-
-                if (isDecimal) {
-                    numberStr += '.';
-                } else {
-                    const digit = recognizeDigitGrid(mask, width, region);
-                    numberStr += digit;
-                }
-
-                prevEnd = region.x2;
-            }
-
-            // Parse and validate
-            const num = parseFloat(numberStr);
-            if (isNaN(num)) return null;
-            if (num < 0 || num > 100) return null; // Sanity check for percentages
-            return num;
-        }
-
-        // Use templates from external digit-templates.js
-        const GRID_W = DIGIT_TEMPLATES.GRID_WIDTH;  // 14
-        const GRID_H = DIGIT_TEMPLATES.GRID_HEIGHT; // 24
-
-        function recognizeDigitGrid(mask, maskWidth, region) {
-            const { x1, x2, y1, y2 } = region;
-            const regWidth = x2 - x1;
-            const regHeight = y2 - y1;
-
-            // Sample the region into a 14x24 grid with intensity values
-            const grid = [];
-            for (let gy = 0; gy < GRID_H; gy++) {
-                const row = [];
-                for (let gx = 0; gx < GRID_W; gx++) {
-                    // Map grid cell to image region
-                    const imgX1 = Math.floor(x1 + (gx / GRID_W) * regWidth);
-                    const imgX2 = Math.floor(x1 + ((gx + 1) / GRID_W) * regWidth);
-                    const imgY1 = Math.floor(y1 + (gy / GRID_H) * regHeight);
-                    const imgY2 = Math.floor(y1 + ((gy + 1) / GRID_H) * regHeight);
-
-                    // Count yellow pixels in this cell
-                    let count = 0;
-                    let total = 0;
-                    for (let y = imgY1; y < imgY2; y++) {
-                        for (let x = imgX1; x < imgX2; x++) {
-                            if (mask[y * maskWidth + x]) count++;
-                            total++;
-                        }
-                    }
-
-                    // Convert to intensity: 0, 1, 7, or 8
-                    const ratio = total > 0 ? count / total : 0;
-                    let intensity;
-                    if (ratio > 0.6) intensity = 8;       // Bright yellow
-                    else if (ratio > 0.3) intensity = 7;  // Dim yellow
-                    else if (ratio > 0.1) intensity = 1;  // Faint glow
-                    else intensity = 0;                   // Black
-
-                    row.push(intensity);
-                }
-                grid.push(row);
-            }
-
-            // Match against ALL variants of ALL templates
-            let bestDigit = '?';
-            let bestScore = Infinity;
-
-            for (const [digit, variants] of Object.entries(DIGIT_TEMPLATES)) {
-                // Skip non-digit keys
-                if (digit === 'GRID_WIDTH' || digit === 'GRID_HEIGHT') continue;
-                if (!Array.isArray(variants)) continue;
-
-                // Check each variant for this digit
-                for (const variant of variants) {
-                    const template = variant.data;
-                    let totalDistance = 0;
-
-                    for (let y = 0; y < GRID_H; y++) {
-                        for (let x = 0; x < GRID_W; x++) {
-                            const gridVal = grid[y][x];
-                            const templateVal = template[y][x];
-                            const diff = Math.abs(gridVal - templateVal);
-                            totalDistance += diff;
-                        }
-                    }
-
-                    // Lower distance = better match
-                    if (totalDistance < bestScore) {
-                        bestScore = totalDistance;
-                        bestDigit = digit;
-                    }
-                }
-            }
-
-            // Calculate match quality (lower distance is better)
-            // Max possible distance = 14 * 24 * 8 = 2688
-            const matchQuality = 1 - (bestScore / (GRID_W * GRID_H * 8));
-
-            // Require at least 50% match quality
-            return matchQuality >= 0.50 ? bestDigit : '?';
-        }
-
-        function sampleRegion(mask, width, x1, y1, x2, y2) {
-            x1 = Math.floor(x1);
-            y1 = Math.floor(y1);
-            x2 = Math.floor(x2);
-            y2 = Math.floor(y2);
-
-            let count = 0;
-            let total = 0;
-
-            for (let y = y1; y < y2; y++) {
-                for (let x = x1; x < x2; x++) {
-                    if (mask[y * width + x]) count++;
-                    total++;
-                }
-            }
-
-            return total > 0 ? count / total : 0;
-        }
-
-        function confirmScanValues() {
-            // Use detected values, or fall back to manual input
-            let o2 = OCR.detectedO2;
-            let he = OCR.detectedHe;
-
-            // If auto-detection failed, use manual values
-            if (o2 === null) o2 = parseFloat(document.getElementById('quickO2').value) || 21;
-            if (he === null) he = parseFloat(document.getElementById('quickHe').value) || 0;
-
-            DOM.inputs.o2Input.value = o2;
-            DOM.inputs.heInput.value = he;
-
+      "use strict";
+
+      /* =====================================================
+       * KikoGen - Orchestratore principale
+       * Le funzioni OCR sono in ocr-engine.js
+       * Le funzioni di export (PDF/PNG/Stampa/Condivisione) sono in export-utils.js
+       * ===================================================== */
+
+      // --- Configurazione & Stato ---
+      const CONFIG = {
+        storageKeys: [
+          "o2Input",
+          "heInput",
+          "temperatureInput",
+          "operatorName",
+          "diverName",
+          "labelWidth",
+          "labelHeight",
+          "basePxSize",
+        ],
+        defaults: {
+          o2Input: 20,
+          heInput: 0.4,
+          temperatureInput: 20,
+          operatorName: "Federico Boni",
+          diverName: "Stefano Paterlini",
+          labelWidth: 50,
+          labelHeight: 50,
+          basePxSize: 16,
+        },
+      };
+
+      const DOM = {
+        inputs: {},
+        displays: {},
+        labelContent: document.querySelector(".label-content"),
+        previewContainer: document.getElementById("labelPreviewContainer"),
+      };
+
+      // Cache elementi DOM
+      CONFIG.storageKeys.forEach((id) => {
+        DOM.inputs[id] = document.getElementById(id);
+      });
+      [
+        "modDisplay",
+        "o2Display",
+        "heDisplay",
+        "dateTimeDisplay",
+        "temperatureDisplay",
+        "operatorDisplay",
+        "diverDisplay",
+      ].forEach((id) => {
+        DOM.displays[id] = document.getElementById(id);
+      });
+
+      // --- Init ---
+      function init() {
+        loadSettings();
+        setupEventListeners();
+        updatePreview();
+      }
+
+      function setupEventListeners() {
+        Object.values(DOM.inputs).forEach((input) => {
+          input.addEventListener("input", () => {
             updatePreview();
             saveSettings();
-            closeOcrModal();
+          });
+        });
+        window.addEventListener("resize", updatePreview);
+      }
 
-            if (navigator.vibrate) navigator.vibrate(100);
-        }
+      // --- Calcoli ---
+      function calculateMOD(o2) {
+        if (o2 <= 0) return 0;
+        // Legge di Dalton: MOD = ((PO2max / fO2) - 1) * 10
+        return Math.max(0, Math.round((1.6 / (o2 / 100) - 1) * 10));
+      }
 
-        function parseOcrText(text) {
-            let result = { found: false, o2: null, he: null, temp: null };
+      // --- Preview ---
+      function updatePreview() {
+        const val = (id) => DOM.inputs[id].value;
+        const num = (id) => parseFloat(val(id)) || 0;
 
-            // Clean up common OCR errors
-            let clean = text
-                .replace(/[oO]2/g, 'O2')
-                .replace(/[hH][eE]/g, 'He')
-                .replace(/\|/g, '1')  // Pipe often misread as 1
-                .replace(/l/g, '1')   // lowercase L often misread as 1
-                .replace(/O(?=\d)/g, '0')  // O before digit is probably 0
-                .replace(/,/g, '.');  // Normalize decimal separator
+        const o2 = num("o2Input");
+        const he = num("heInput");
+        const temp = num("temperatureInput");
+        const mod = calculateMOD(o2);
 
-            console.log("Cleaned OCR text:", clean);
+        DOM.displays.modDisplay.textContent = `MOD ${mod} m`;
+        DOM.displays.o2Display.textContent = `${o2.toFixed(1)}%`;
+        DOM.displays.heDisplay.textContent = `${he.toFixed(1)}%`;
+        DOM.displays.temperatureDisplay.textContent = `${temp.toFixed(1)}°C`;
+        DOM.displays.operatorDisplay.textContent = val("operatorName");
+        DOM.displays.diverDisplay.textContent = val("diverName");
 
-            // Helper to parse float safely
-            const parseNum = (str) => {
-                if (!str) return null;
-                const val = parseFloat(str.replace(',', '.'));
-                return isNaN(val) ? null : val;
-            };
+        const now = new Date();
+        DOM.displays.dateTimeDisplay.textContent = `${now.toLocaleDateString("it-IT")}, ${now.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}`;
 
-            // Strategy 1: Explicit Labels (Priority)
-            // O2/02 followed by number
-            const o2Match = clean.match(/(?:Oxygen|Ossigeno|Oxy|O2|02|O\s?2|0z|Oz)[\s:.]*(\d{1,3}\.?\d*)/i);
-            if (o2Match) {
-                const val = parseNum(o2Match[1]);
-                if (val !== null && val >= 0 && val <= 100) {
-                    result.o2 = val;
-                    result.found = true;
-                }
-            }
+        // Scala responsive: adatta al contenitore con max 150%
+        const widthMm = num("labelWidth");
+        const heightMm = num("labelHeight");
+        const basePx = num("basePxSize");
+        const containerWidth = DOM.previewContainer.clientWidth - 40;
+        const scaleFactor = Math.min(containerWidth / (widthMm * 5), 1.5);
+        const finalScale = 5 * scaleFactor;
 
-            // He followed by number
-            const heMatch = clean.match(/(?:Helium|Elio|He|H\s?e|he)[\s:.]*(\d{1,3}\.?\d*)/i);
-            if (heMatch) {
-                const val = parseNum(heMatch[1]);
-                if (val !== null && val >= 0 && val <= 100) {
-                    result.he = val;
-                    result.found = true;
-                }
-            }
+        DOM.labelContent.style.width = `${widthMm * finalScale}px`;
+        DOM.labelContent.style.height = `${heightMm * finalScale}px`;
+        DOM.labelContent.style.setProperty(
+          "--base-px-size",
+          `${basePx * scaleFactor}px`,
+        );
+      }
 
-            // Temperature
-            const tempMatch = clean.match(/(?:Temperature|Temperatura|Temp|°C)[\s:.]*(\d{1,3}\.?\d*)/i);
-            if (tempMatch) {
-                const val = parseNum(tempMatch[1]);
-                if (val !== null) {
-                    result.temp = val;
-                    result.found = true;
-                }
-            }
+      // --- Storage ---
+      function saveSettings() {
+        CONFIG.storageKeys.forEach((key) =>
+          localStorage.setItem(key, DOM.inputs[key].value),
+        );
+      }
 
-            // Strategy 2: TMX format "21/35" or "21.0/0.5"
-            if (result.o2 === null && result.he === null) {
-                const tmxMatch = clean.match(/(\d{1,3}\.?\d?)\s*[\/\\]\s*(\d{1,3}\.?\d?)/);
-                if (tmxMatch) {
-                    result.o2 = parseNum(tmxMatch[1]);
-                    result.he = parseNum(tmxMatch[2]);
-                    result.found = true;
-                }
-            }
+      function loadSettings() {
+        CONFIG.storageKeys.forEach((key) => {
+          const saved = localStorage.getItem(key);
+          DOM.inputs[key].value = saved !== null ? saved : CONFIG.defaults[key];
+        });
+      }
 
-            // Strategy 3: Find two decimal numbers in sequence (common analyzer format)
-            // Look for patterns like "21.1" and "0.7" on separate lines or with spacing
-            if (result.o2 === null && result.he === null) {
-                // Find all decimal numbers in the text
-                const allNumbers = clean.match(/\d{1,3}\.\d/g);
-                console.log("Found decimal numbers:", allNumbers);
-
-                if (allNumbers && allNumbers.length >= 2) {
-                    // First number is likely O2 (usually 18-100%), second is He (usually 0-50%)
-                    const num1 = parseNum(allNumbers[0]);
-                    const num2 = parseNum(allNumbers[1]);
-
-                    // Heuristic: O2 is usually between 18-100, He is usually 0-50
-                    if (num1 >= 15 && num1 <= 100) {
-                        result.o2 = num1;
-                        result.found = true;
-                    }
-                    if (num2 !== null && num2 >= 0 && num2 <= 60) {
-                        result.he = num2;
-                        result.found = true;
-                    }
-                }
-            }
-
-            // Strategy 4: Line-by-line analysis for numbers
-            if (result.o2 === null && result.he === null) {
-                const lines = clean.split(/[\n\r]+/);
-                const numbersFound = [];
-
-                for (const line of lines) {
-                    // Find any number pattern in each line
-                    const numMatch = line.match(/(\d{1,3}[.,]?\d*)/);
-                    if (numMatch) {
-                        const val = parseNum(numMatch[1]);
-                        if (val !== null && val > 0) {
-                            numbersFound.push(val);
-                        }
-                    }
-                }
-
-                console.log("Numbers found per line:", numbersFound);
-
-                // If we found at least 2 numbers, use first two
-                if (numbersFound.length >= 2) {
-                    // Sort to identify: larger one is likely O2, smaller is He
-                    const sorted = [...numbersFound].sort((a, b) => b - a);
-                    if (sorted[0] >= 15 && sorted[0] <= 100) {
-                        result.o2 = sorted[0];
-                        result.found = true;
-                    }
-                    if (sorted[1] >= 0 && sorted[1] <= 60) {
-                        result.he = sorted[1];
-                        result.found = true;
-                    }
-                }
-            }
-
-            // Strategy 5: Last resort - find ANY two numbers
-            if (result.o2 === null && result.he === null) {
-                const anyNumbers = clean.match(/\d+\.?\d*/g);
-                console.log("Any numbers found:", anyNumbers);
-
-                if (anyNumbers && anyNumbers.length >= 2) {
-                    // Filter reasonable values
-                    const reasonable = anyNumbers
-                        .map(n => parseNum(n))
-                        .filter(n => n !== null && n > 0 && n < 100);
-
-                    if (reasonable.length >= 2) {
-                        // Assume larger is O2, smaller is He
-                        reasonable.sort((a, b) => b - a);
-                        result.o2 = reasonable[0];
-                        result.he = reasonable[1];
-                        result.found = true;
-                    }
-                }
-            }
-
-            console.log("Parse result:", result);
-            return result;
-        }
-
-        // Start
-        document.addEventListener('DOMContentLoaded', init);
-
+      // --- Avvio ---
+      document.addEventListener("DOMContentLoaded", init);
     </script>
-</body>
-
+  </body>
 </html>
