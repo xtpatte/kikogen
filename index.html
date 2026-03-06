@@ -166,8 +166,8 @@
         <button class="btn" style="flex: 1; min-width: 80px; background: #6d28d9; color: white" onclick="printLabel()">
           <i class="fas fa-print"></i> Stampa
         </button>
-        <button class="btn btn-accent" style="flex: 1; min-width: 80px" onclick="shareViaBluetooth()" id="btButton">
-          <i class="fas fa-share-alt"></i> Condividi
+        <button class="btn btn-accent" style="flex: 1; min-width: 80px" onclick="printViaBluetooth()" id="btPrintBtn">
+          <i class="fas fa-bluetooth-b"></i> Stampa BT
         </button>
       </div>
     </div>
@@ -353,6 +353,7 @@
   <script src="digit-templates.js"></script>
   <script src="ocr-engine.js"></script>
   <script src="export-utils.js"></script>
+  <script src="bluetooth-print.js"></script>
 
   <script>
     "use strict";

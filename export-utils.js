@@ -130,6 +130,13 @@ async function printLabel() {
   printArea.innerHTML = "";
   printArea.appendChild(clone);
 
+  // Inietta @page con dimensioni esatte dell'etichetta.
+  // Deve stare al top-level del documento (non dentro @media print) per essere valido.
+  const pageStyle = document.createElement("style");
+  pageStyle.id = "_kiko_page_size";
+  pageStyle.textContent = `@page { size: ${widthMm}mm ${heightMm}mm; margin: 0; }`;
+  document.head.appendChild(pageStyle);
+
   await new Promise((r) => setTimeout(r, 80));
   window.print();
 
@@ -137,6 +144,7 @@ async function printLabel() {
   // avvenire prima che il browser abbia renderizzato la stampa)
   setTimeout(() => {
     printArea.innerHTML = "";
+    document.getElementById("_kiko_page_size")?.remove();
   }, 1000);
 }
 

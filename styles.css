@@ -498,10 +498,6 @@ footer {
  * che la stampa fisica corrisponda alle dimensioni reali dell'etichetta.
  */
 @media print {
-  @page {
-    margin: 5mm;
-  }
-
   body > *:not(#print-area) {
     display: none !important;
   }
