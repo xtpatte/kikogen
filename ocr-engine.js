@@ -27,6 +27,7 @@ const OCR = {
   },
   detectedO2: null,
   detectedHe: null,
+  _usedFallback: false,
 };
 
 /* ---- Pattern 7 segmenti (non più usati attivamente, mantenuti per riferimento) ---- */
@@ -155,6 +156,7 @@ async function scanDisplay() {
       debugText.textContent += "\n⚠️ Troppa luce: alza la soglia";
     }
 
+    OCR._usedFallback = false;
     const result = recognizeDigits(
       lightMask,
       OCR.canvas.width,
@@ -163,6 +165,9 @@ async function scanDisplay() {
 
     debugText.textContent += `\n📊 Righe cifre trovate: ${result.rows}`;
     debugText.textContent += `\n🔢 Valori: O₂=${result.o2 !== null ? result.o2.toFixed(1) : "?"}, He=${result.he !== null ? result.he.toFixed(1) : "?"}`;
+    if (OCR._usedFallback) {
+      debugText.textContent += "\n⚠️ Fallback attivo: cifre parziali recuperate";
+    }
 
     if (result.o2 !== null || result.he !== null) {
       OCR.detectedO2 = result.o2;
@@ -391,8 +396,23 @@ function extractNumberFromBand(mask, width, band) {
   }
 
   const num = parseFloat(numberStr);
-  if (isNaN(num) || num < 0 || num > 100) return null;
-  return num;
+  if (!isNaN(num) && num >= 0 && num <= 100) return num;
+
+  // Fallback: se ci sono cifre non riconosciute (?), prova a estrarre il
+  // primo numero leggibile ignorando i caratteri ambigui.
+  if (numberStr.includes("?")) {
+    const cleaned = numberStr.replace(/\?/g, "");
+    const match = cleaned.match(/\d+\.?\d*/);
+    if (match) {
+      const fallback = parseFloat(match[0]);
+      if (!isNaN(fallback) && fallback >= 0 && fallback <= 100) {
+        OCR._usedFallback = true;
+        return fallback;
+      }
+    }
+  }
+
+  return null;
 }
 
 function recognizeDigitGrid(mask, maskWidth, region) {
